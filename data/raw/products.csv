@@ -1,0 +1,37 @@
+product_id,product_name,category,collection,material,color,unit_price_eur,base_weekly_demand,launch_date,lead_time_days,minimum_stock_units,active_flag
+P001,Sac à main Éclat 01,Sac à main,Éclat,Cuir grainé,Ivoire,987.0,12.0,2023-01-18,14,11,1
+P002,Portefeuille Atelier 02,Portefeuille,Atelier,Cuir lisse,Noir,354.0,17.0,2023-02-04,21,14,1
+P003,Ceinture Héritage 03,Ceinture,Héritage,Cuir embossé,Ivoire,503.0,12.0,2023-02-21,28,17,1
+P004,Petite maroquinerie Nocturne 04,Petite maroquinerie,Nocturne,Toile enduite,Noir,236.0,22.0,2023-03-10,35,20,1
+P005,Sac à main Éclat 05,Sac à main,Éclat,Cuir grainé,Ivoire,1535.0,14.0,2023-03-27,14,23,1
+P006,Portefeuille Atelier 06,Portefeuille,Atelier,Cuir lisse,Noir,542.0,19.0,2023-04-13,21,8,1
+P007,Ceinture Héritage 07,Ceinture,Héritage,Cuir embossé,Ivoire,367.0,12.0,2023-04-30,28,11,1
+P008,Petite maroquinerie Nocturne 08,Petite maroquinerie,Nocturne,Toile enduite,Noir,352.0,20.0,2023-05-17,35,14,1
+P009,Sac à main Éclat 09,Sac à main,Éclat,Cuir grainé,Ivoire,933.0,7.0,2023-06-03,14,17,1
+P010,Portefeuille Atelier 10,Portefeuille,Atelier,Cuir lisse,Noir,300.0,11.0,2023-06-20,21,20,1
+P011,Ceinture Héritage 11,Ceinture,Héritage,Cuir embossé,Ivoire,611.0,12.0,2023-07-07,28,23,1
+P012,Petite maroquinerie Nocturne 12,Petite maroquinerie,Nocturne,Toile enduite,Noir,208.0,18.0,2023-07-24,35,8,1
+P013,Sac à main Éclat 13,Sac à main,Éclat,Cuir grainé,Ivoire,1481.0,9.0,2023-08-10,14,11,1
+P014,Portefeuille Atelier 14,Portefeuille,Atelier,Cuir lisse,Noir,488.0,13.0,2023-08-27,21,14,1
+P015,Ceinture Héritage 15,Ceinture,Héritage,Cuir embossé,Ivoire,475.0,12.0,2023-09-13,28,17,1
+P016,Petite maroquinerie Nocturne 16,Petite maroquinerie,Nocturne,Toile enduite,Noir,324.0,16.0,2023-09-30,35,20,1
+P017,Sac à main Éclat 17,Sac à main,Éclat,Cuir grainé,Ivoire,879.0,11.0,2023-10-17,14,23,1
+P018,Portefeuille Atelier 18,Portefeuille,Atelier,Cuir lisse,Noir,676.0,15.0,2023-01-07,21,8,1
+P019,Ceinture Héritage 19,Ceinture,Héritage,Cuir embossé,Ivoire,339.0,12.0,2023-01-24,28,11,1
+P020,Petite maroquinerie Nocturne 20,Petite maroquinerie,Nocturne,Toile enduite,Noir,180.0,14.0,2023-02-10,35,14,1
+P021,Sac à main Éclat 21,Sac à main,Éclat,Cuir grainé,Ivoire,1427.0,13.0,2023-02-27,14,17,1
+P022,Portefeuille Atelier 22,Portefeuille,Atelier,Cuir lisse,Noir,434.0,17.0,2023-03-16,21,20,1
+P023,Ceinture Héritage 23,Ceinture,Héritage,Cuir embossé,Ivoire,583.0,12.0,2023-04-02,28,23,1
+P024,Petite maroquinerie Nocturne 24,Petite maroquinerie,Nocturne,Toile enduite,Noir,296.0,22.0,2023-04-19,35,8,1
+P025,Sac à main Éclat 25,Sac à main,Éclat,Cuir grainé,Ivoire,1975.0,15.0,2023-05-06,14,11,1
+P026,Portefeuille Atelier 26,Portefeuille,Atelier,Cuir lisse,Noir,622.0,19.0,2023-05-23,21,14,1
+P027,Ceinture Héritage 27,Ceinture,Héritage,Cuir embossé,Ivoire,447.0,12.0,2023-06-09,28,17,1
+P028,Petite maroquinerie Nocturne 28,Petite maroquinerie,Nocturne,Toile enduite,Noir,152.0,20.0,2023-06-26,35,20,1
+P029,Sac à main Éclat 29,Sac à main,Éclat,Cuir grainé,Ivoire,1373.0,8.0,2023-07-13,14,23,1
+P030,Portefeuille Atelier 30,Portefeuille,Atelier,Cuir lisse,Noir,380.0,11.0,2023-07-30,21,8,1
+P031,Ceinture Héritage 31,Ceinture,Héritage,Cuir embossé,Ivoire,691.0,12.0,2023-08-16,28,11,1
+P032,Petite maroquinerie Nocturne 32,Petite maroquinerie,Nocturne,Toile enduite,Noir,268.0,18.0,2023-09-02,35,14,1
+P033,Sac à main Éclat 33,Sac à main,Éclat,Cuir grainé,Ivoire,1921.0,10.0,2023-09-19,14,17,1
+P034,Portefeuille Atelier 34,Portefeuille,Atelier,Cuir lisse,Noir,568.0,13.0,2023-10-06,21,20,1
+P035,Ceinture Héritage 35,Ceinture,Héritage,Cuir embossé,Ivoire,555.0,12.0,2023-10-23,28,23,1
+P036,Petite maroquinerie Nocturne 36,Petite maroquinerie,Nocturne,Toile enduite,Noir,124.0,16.0,2023-01-13,35,8,1

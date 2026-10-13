@@ -1,0 +1,22 @@
+{
+  "status": "success",
+  "generated_at": "2026-10-12T17:09:56.243379+00:00",
+  "processed_files": {
+    "products_raw.csv": 36,
+    "calendar_raw.csv": 116,
+    "sales_weekly.csv": 4176,
+    "inventory_weekly.csv": 4176
+  },
+  "outputs": {
+    "sales_clean.csv": 4176,
+    "sales_quarantine.csv": 0,
+    "luxury_stock_pipeline.sqlite": true
+  },
+  "rules": [
+    "dates parsed",
+    "numeric fields coerced",
+    "duplicates rejected",
+    "unknown products rejected",
+    "negative quantities rejected"
+  ]
+}

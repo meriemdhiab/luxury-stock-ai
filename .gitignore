@@ -1,0 +1,18 @@
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.venv/
+.env
+*.log
+.DS_Store
+04_ai/models/*.pkl
+04_ai/models/*.joblib
+data/processed/
+logs/
+*.sqlite-shm
+*.sqlite-wal
+# Generated local artifacts
+04_ai/models/*.pkl
+data/processed/
+database/luxury_stock_pipeline.sqlite
+logs/

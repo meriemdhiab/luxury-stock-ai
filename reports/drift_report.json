@@ -1,0 +1,12 @@
+{
+  "status": "OK",
+  "metric": "PSI",
+  "value": 0.069766,
+  "thresholds": {
+    "warning": 0.2,
+    "alert": 0.25
+  },
+  "reference_period": "TRAIN",
+  "comparison_period": "TEST",
+  "action": "Surveiller"
+}

@@ -1,0 +1,43 @@
+{
+  "status": "success",
+  "generated_at": "2026-10-12T17:09:56.243379+00:00",
+  "sources": [
+    {
+      "source": "products.csv",
+      "input_rows": 36,
+      "valid_rows": 36,
+      "rejected_rows": 0
+    },
+    {
+      "source": "calendar.csv",
+      "input_rows": 116,
+      "valid_rows": 116,
+      "rejected_rows": 0
+    },
+    {
+      "source": "sales_weekly.csv",
+      "input_rows": 4176,
+      "valid_rows": 4176,
+      "rejected_rows": 0
+    },
+    {
+      "source": "inventory_weekly.csv",
+      "input_rows": 4176,
+      "valid_rows": 4176,
+      "rejected_rows": 0
+    }
+  ],
+  "quality_fixture": {
+    "source": "data/quality/sales_quality_issues.csv",
+    "expected_issue_types": [
+      "duplicate_key",
+      "invalid_date",
+      "missing_numeric_value",
+      "negative_units",
+      "unknown_product"
+    ]
+  },
+  "total_input_rows": 8504,
+  "total_valid_rows": 8504,
+  "total_rejected_rows": 0
+}

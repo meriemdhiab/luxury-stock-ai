@@ -1,0 +1,18 @@
+paths:
+  products: data/raw/products.csv
+  calendar: data/raw/calendar.csv
+  sales: data/raw/sales_weekly.csv
+  inventory: data/raw/inventory_weekly.csv
+  quality_fixture: data/quality/sales_quality_issues.csv
+  processed_dir: data/processed
+  sqlite: database/luxury_stock_pipeline.sqlite
+quality:
+  required_sales_columns: [week_start, product_id, units_sold, returns_units, net_units_sold, revenue_eur, channel]
+  required_inventory_columns: [week_start, product_id, opening_stock_units, inbound_units, units_sold, closing_stock_units, stockout_flag, days_of_cover]
+  fail_on_unknown_product: true
+  fail_on_negative_units: true
+model:
+  train_weeks: 104
+  test_weeks: 12
+  forecast_horizon_weeks: 12
+  random_state: 42

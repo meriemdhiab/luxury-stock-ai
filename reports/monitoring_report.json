@@ -1,0 +1,46 @@
+{
+  "status": "ok",
+  "recommended_action": "Aucune action immédiate",
+  "generated_at": "2026-10-12T17:09:56.243379+00:00",
+  "dataset_version": "luxury-stock-ai-v1",
+  "reference_created_this_run": true,
+  "checks": [
+    {
+      "check": "candidate_mae_under_threshold",
+      "status": "ok",
+      "detail": "valeur 3.8742 (seuil 10.0)"
+    },
+    {
+      "check": "candidate_rmse_under_threshold",
+      "status": "ok",
+      "detail": "valeur 4.9359 (seuil 15.0)"
+    },
+    {
+      "check": "quality_rejected_rate",
+      "status": "ok",
+      "detail": "valeur 0.0000 (seuil 0.01)"
+    },
+    {
+      "check": "candidate_beats_baseline_mae",
+      "status": "ok",
+      "detail": "candidate 3.8742 contre baseline 7.2964"
+    },
+    {
+      "check": "forecast_non_negative",
+      "status": "ok",
+      "detail": "toutes les prévisions sont positives ou nulles"
+    }
+  ],
+  "retraining_policy": [
+    "baisse de plus de 10 points d'une métrique",
+    "hausse durable de l'erreur",
+    "dérive de distribution des ventes",
+    "violation d'une règle qualité critique",
+    "ajout de nouvelles données ou de nouveaux produits"
+  ],
+  "summary": {
+    "ok": 5,
+    "warning": 0,
+    "alert": 0
+  }
+}

@@ -1,0 +1,49 @@
+{
+  "status": "success",
+  "generated_at": "2026-10-12T17:09:56.243379+00:00",
+  "chain": [
+    {
+      "step": 1,
+      "name": "sources",
+      "inputs": [
+        "products.csv",
+        "calendar.csv",
+        "sales_weekly.csv",
+        "inventory_weekly.csv"
+      ],
+      "owner": "data owner"
+    },
+    {
+      "step": 2,
+      "name": "validation",
+      "script": "03_pipeline/src/pipeline.py",
+      "output": "quality_report.json"
+    },
+    {
+      "step": 3,
+      "name": "transformation",
+      "script": "03_pipeline/src/pipeline.py",
+      "output": "data/processed/*.csv"
+    },
+    {
+      "step": 4,
+      "name": "storage",
+      "output": "database/luxury_stock_pipeline.sqlite or PostgreSQL"
+    },
+    {
+      "step": 5,
+      "name": "model",
+      "scripts": [
+        "train.py",
+        "evaluate.py",
+        "predict.py"
+      ],
+      "output": "metrics.json, predictions_test.csv, forecast_future.csv"
+    },
+    {
+      "step": 6,
+      "name": "decision_support",
+      "output": "Streamlit dashboard"
+    }
+  ]
+}

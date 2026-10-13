@@ -1,0 +1,68 @@
+{
+  "status": "success",
+  "generated_at": "2026-10-12T17:09:56.243379+00:00",
+  "method": "importance globale du modèle et règle métier explicite de stock",
+  "feature_importance": {
+    "lag_1": 0.629416,
+    "lag_4": 0.115832,
+    "lag_8": 0.066359,
+    "month": 0.044653,
+    "rolling_mean_4": 0.04134,
+    "week_index": 0.039766,
+    "product_num": 0.038196,
+    "luxury_peak_flag": 0.016332,
+    "quarter": 0.008106
+  },
+  "business_rule": "replenishment = max(0, ceil(forecast_units * 2 - closing_stock_units))",
+  "examples": [
+    {
+      "forecast_week_start": "2026-06-08",
+      "product_id": "P015",
+      "forecast_units": 24.06,
+      "closing_stock_units": 30.0,
+      "risk_of_stockout": false,
+      "recommended_replenishment_units": 19,
+      "explanation": "La recommandation compare la demande prévue à deux semaines de couverture cible et au stock disponible."
+    },
+    {
+      "forecast_week_start": "2026-05-25",
+      "product_id": "P015",
+      "forecast_units": 23.96,
+      "closing_stock_units": 30.0,
+      "risk_of_stockout": false,
+      "recommended_replenishment_units": 18,
+      "explanation": "La recommandation compare la demande prévue à deux semaines de couverture cible et au stock disponible."
+    },
+    {
+      "forecast_week_start": "2026-06-01",
+      "product_id": "P015",
+      "forecast_units": 23.36,
+      "closing_stock_units": 30.0,
+      "risk_of_stockout": false,
+      "recommended_replenishment_units": 17,
+      "explanation": "La recommandation compare la demande prévue à deux semaines de couverture cible et au stock disponible."
+    },
+    {
+      "forecast_week_start": "2026-05-11",
+      "product_id": "P015",
+      "forecast_units": 22.7,
+      "closing_stock_units": 30.0,
+      "risk_of_stockout": false,
+      "recommended_replenishment_units": 16,
+      "explanation": "La recommandation compare la demande prévue à deux semaines de couverture cible et au stock disponible."
+    },
+    {
+      "forecast_week_start": "2026-05-18",
+      "product_id": "P015",
+      "forecast_units": 22.81,
+      "closing_stock_units": 30.0,
+      "risk_of_stockout": false,
+      "recommended_replenishment_units": 16,
+      "explanation": "La recommandation compare la demande prévue à deux semaines de couverture cible et au stock disponible."
+    }
+  ],
+  "limits": [
+    "l'importance globale ne constitue pas une explication causale locale",
+    "une explication locale plus fine pourra être ajoutée avec SHAP en production"
+  ]
+}

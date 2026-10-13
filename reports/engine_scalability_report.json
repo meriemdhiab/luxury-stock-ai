@@ -1,0 +1,22 @@
+{
+  "status": "success",
+  "generated_at": "2026-10-12T17:09:56.243379+00:00",
+  "benchmark": {
+    "rows": 4176,
+    "products": 36,
+    "operation": "grouped rolling feature calculation",
+    "runs": 3,
+    "average_seconds": 0.003842,
+    "rows_per_second": 1087011.69
+  },
+  "scale_strategy": [
+    "partition by product",
+    "index product_id and week_start",
+    "move to batch orchestration for larger volumes",
+    "use a columnar warehouse if history grows significantly"
+  ],
+  "limits": [
+    "local benchmark on synthetic data",
+    "not a production load test"
+  ]
+}

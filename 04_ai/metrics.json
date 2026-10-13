@@ -1,0 +1,16 @@
+{
+  "evaluation_protocol": "Temporal split, 104 train weeks and 12 test weeks",
+  "target": "net_units_sold",
+  "baseline": {
+    "name": "rolling_mean_4",
+    "mae": 7.2964,
+    "rmse": 9.9282
+  },
+  "candidate": {
+    "name": "random_forest_regressor",
+    "mae": 3.8742,
+    "rmse": 4.9359
+  },
+  "improvement_mae_percent": 46.9,
+  "test_rows": 420
+}

@@ -1,0 +1,48 @@
+services:
+  postgres:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_DB: luxury_stock
+      POSTGRES_USER: luxury_stock
+      POSTGRES_PASSWORD: luxury_stock
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./02_architecture/sql/001_schema.sql:/docker-entrypoint-initdb.d/001_schema.sql:ro
+      - ./02_architecture/sql/002_seed_from_csv_docker.sql:/docker-entrypoint-initdb.d/002_seed_from_csv.sql:ro
+      - ./data:/data:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U luxury_stock -d luxury_stock"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  pipeline:
+    build: .
+    command: ["sh", "-c", "python scripts/generate_data.py && python 03_pipeline/src/run_pipeline.py && python 04_ai/src/train.py && python 04_ai/src/evaluate.py && python 04_ai/src/predict.py"]
+    volumes:
+      - .:/app
+    environment:
+      APP_ENV: docker
+      SQLITE_PATH: /app/database/luxury_stock.sqlite
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+  app:
+    build: .
+    command: ["streamlit", "run", "app/streamlit_app.py", "--server.address=0.0.0.0", "--server.port=8501"]
+    ports:
+      - "8501:8501"
+    volumes:
+      - .:/app
+    environment:
+      APP_ENV: docker
+      SQLITE_PATH: /app/database/luxury_stock.sqlite
+    depends_on:
+      pipeline:
+        condition: service_completed_successfully
+
+volumes:
+  postgres_data:

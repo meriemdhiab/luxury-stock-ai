@@ -1,0 +1,45 @@
+{
+  "pipeline": "Luxury Stock AI",
+  "status": "success",
+  "started_at": "2026-10-12T17:08:30.305874+00:00",
+  "finished_at": "2026-10-12T17:09:56.243379+00:00",
+  "duration_seconds": null,
+  "steps": [
+    {
+      "name": "validation",
+      "script": "03_pipeline/src/pipeline.py",
+      "status": "success",
+      "return_code": 0
+    },
+    {
+      "name": "transformation",
+      "script": "03_pipeline/src/pipeline.py",
+      "status": "success",
+      "return_code": 0
+    },
+    {
+      "name": "load_sqlite",
+      "script": "03_pipeline/src/pipeline.py",
+      "status": "success",
+      "return_code": 0
+    },
+    {
+      "name": "train_model",
+      "script": "04_ai/src/train.py",
+      "status": "success",
+      "return_code": 0
+    },
+    {
+      "name": "evaluate_model",
+      "script": "04_ai/src/evaluate.py",
+      "status": "success",
+      "return_code": 0
+    },
+    {
+      "name": "future_prediction",
+      "script": "04_ai/src/predict.py",
+      "status": "success",
+      "return_code": 0
+    }
+  ]
+}

@@ -1,0 +1,15 @@
+{
+  "dataset_version": "luxury-stock-ai-v1",
+  "generated_at": "2026-10-12T17:09:56.243379+00:00",
+  "metrics": {
+    "name": "random_forest_regressor",
+    "mae": 3.8742,
+    "rmse": 4.9359
+  },
+  "thresholds": {
+    "max_mae": 10.0,
+    "max_rmse": 15.0,
+    "max_quality_rejected_rate": 0.01,
+    "max_metric_drop_percent": 10.0
+  }
+}

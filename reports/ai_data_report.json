@@ -1,0 +1,35 @@
+{
+  "status": "success",
+  "dataset_version": "luxury-stock-ai-v1",
+  "generated_at": "2026-10-12T17:09:56.243379+00:00",
+  "source_hash": {
+    "products.csv": "17b91b05c9ae616c",
+    "calendar.csv": "1eeb64df602efdf1",
+    "sales_weekly.csv": "bc39ddccb4e02b31",
+    "inventory_weekly.csv": "45447a2751974885"
+  },
+  "split": {
+    "method": "chronologique",
+    "train_weeks": 104,
+    "test_weeks": 12,
+    "forecast_horizon_weeks": 12,
+    "random_seed": 20261012
+  },
+  "products": 36,
+  "weeks": 116,
+  "sales_rows": 4176,
+  "inventory_rows": 4176,
+  "train_rows": 3744,
+  "test_rows": 432,
+  "personal_data": false,
+  "personal_data_note": "Données synthétiques agrégées, aucun identifiant client.",
+  "missing_values": {
+    "week_start": 0,
+    "product_id": 0,
+    "units_sold": 0,
+    "returns_units": 0,
+    "net_units_sold": 0,
+    "revenue_eur": 0,
+    "channel": 0
+  }
+}
