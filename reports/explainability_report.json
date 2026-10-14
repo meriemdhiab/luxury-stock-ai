@@ -1,6 +1,6 @@
 {
   "status": "success",
-  "generated_at": "2026-10-14T18:32:05.763598+00:00",
+  "generated_at": "2026-10-14T19:12:58.117412+00:00",
   "method": "importance globale du modèle et règle métier explicite de stock",
   "feature_importance": {
     "rolling_mean_4": 0.753236,
@@ -13,52 +13,57 @@
     "luxury_peak_flag": 0.017732,
     "quarter": 0.005658
   },
-  "business_rule": "replenishment = max(0, ceil(forecast_units * 2 - closing_stock_units))",
+  "business_rule": "reorder_point = demande prévue sur ceil(lead_time_days / 7) semaines + minimum_stock_units ; risque si closing_stock_units < reorder_point ; réappro = max(0, ceil(reorder_point + 2 semaines de demande suivantes - closing_stock_units))",
   "examples": [
     {
-      "forecast_week_start": "2026-04-27",
-      "product_id": "P015",
-      "forecast_units": 21.58,
-      "closing_stock_units": 30.0,
+      "product_id": "P035",
+      "closing_stock_units": 44,
+      "lead_time_days": 28,
+      "minimum_stock_units": 23,
+      "reorder_point_units": 116,
       "risk_of_stockout": true,
-      "recommended_replenishment_units": 14,
-      "explanation": "La recommandation compare deux semaines de demande prévue (couverture cible) au dernier stock disponible."
+      "recommended_replenishment_units": 120,
+      "explanation": "Le stock est comparé à la demande prévue pendant le délai fournisseur augmentée du stock minimal ; la commande vise ce seuil plus deux semaines de demande."
     },
     {
-      "forecast_week_start": "2026-06-08",
-      "product_id": "P015",
-      "forecast_units": 21.06,
-      "closing_stock_units": 30.0,
+      "product_id": "P011",
+      "closing_stock_units": 38,
+      "lead_time_days": 28,
+      "minimum_stock_units": 23,
+      "reorder_point_units": 110,
       "risk_of_stockout": true,
-      "recommended_replenishment_units": 13,
-      "explanation": "La recommandation compare deux semaines de demande prévue (couverture cible) au dernier stock disponible."
+      "recommended_replenishment_units": 115,
+      "explanation": "Le stock est comparé à la demande prévue pendant le délai fournisseur augmentée du stock minimal ; la commande vise ce seuil plus deux semaines de demande."
     },
     {
-      "forecast_week_start": "2026-06-01",
       "product_id": "P015",
-      "forecast_units": 21.19,
-      "closing_stock_units": 30.0,
+      "closing_stock_units": 30,
+      "lead_time_days": 28,
+      "minimum_stock_units": 17,
+      "reorder_point_units": 99,
       "risk_of_stockout": true,
-      "recommended_replenishment_units": 13,
-      "explanation": "La recommandation compare deux semaines de demande prévue (couverture cible) au dernier stock disponible."
+      "recommended_replenishment_units": 111,
+      "explanation": "Le stock est comparé à la demande prévue pendant le délai fournisseur augmentée du stock minimal ; la commande vise ce seuil plus deux semaines de demande."
     },
     {
-      "forecast_week_start": "2026-05-11",
-      "product_id": "P015",
-      "forecast_units": 21.4,
-      "closing_stock_units": 30.0,
+      "product_id": "P031",
+      "closing_stock_units": 47,
+      "lead_time_days": 28,
+      "minimum_stock_units": 11,
+      "reorder_point_units": 94,
       "risk_of_stockout": true,
-      "recommended_replenishment_units": 13,
-      "explanation": "La recommandation compare deux semaines de demande prévue (couverture cible) au dernier stock disponible."
+      "recommended_replenishment_units": 90,
+      "explanation": "Le stock est comparé à la demande prévue pendant le délai fournisseur augmentée du stock minimal ; la commande vise ce seuil plus deux semaines de demande."
     },
     {
-      "forecast_week_start": "2026-04-06",
-      "product_id": "P015",
-      "forecast_units": 21.42,
-      "closing_stock_units": 30.0,
+      "product_id": "P007",
+      "closing_stock_units": 45,
+      "lead_time_days": 28,
+      "minimum_stock_units": 11,
+      "reorder_point_units": 92,
       "risk_of_stockout": true,
-      "recommended_replenishment_units": 13,
-      "explanation": "La recommandation compare deux semaines de demande prévue (couverture cible) au dernier stock disponible."
+      "recommended_replenishment_units": 88,
+      "explanation": "Le stock est comparé à la demande prévue pendant le délai fournisseur augmentée du stock minimal ; la commande vise ce seuil plus deux semaines de demande."
     }
   ],
   "limits": [

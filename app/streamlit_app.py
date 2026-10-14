@@ -48,17 +48,33 @@ if risk_only:
 if selected_products:
     view = view[view["product_name"].isin(selected_products)]
 
+# Le risque et la recommandation sont calculés par produit : une ligne par produit pour les agréger.
+per_product = view.drop_duplicates("product_id")
+
 col1, col2, col3, col4 = st.columns(4)
-col1.metric("Produits analysés", int(view["product_id"].nunique()))
-col2.metric("Semaines-produit à risque", int(view["risk_of_stockout"].sum()))
-col3.metric("Unités prévues", int(view["forecast_units"].sum()))
-col4.metric("Unités à réapprovisionner", int(view["recommended_replenishment_units"].sum()))
+col1.metric("Produits analysés", int(per_product["product_id"].nunique()))
+col2.metric("Produits à risque de rupture", int(per_product["risk_of_stockout"].sum()))
+col3.metric("Unités prévues (12 semaines)", int(view["forecast_units"].sum()))
+col4.metric("Unités à réapprovisionner", int(per_product["recommended_replenishment_units"].sum()))
 
-st.subheader("Prévisions et stock")
-st.dataframe(view[["forecast_week_start", "product_name", "category", "forecast_units", "closing_stock_units", "risk_of_stockout", "recommended_replenishment_units"]], use_container_width=True)
+st.subheader("Recommandations par produit")
+st.dataframe(
+    per_product[[
+        "product_name", "category", "closing_stock_units", "lead_time_days", "minimum_stock_units",
+        "reorder_point_units", "risk_of_stockout", "recommended_replenishment_units",
+    ]].sort_values("recommended_replenishment_units", ascending=False),
+    use_container_width=True,
+    hide_index=True,
+)
 
-chart = view.groupby("forecast_week_start", as_index=False).agg(forecast_units=("forecast_units", "sum"), replenishment=("recommended_replenishment_units", "sum"))
+st.subheader("Prévisions hebdomadaires")
+chart = view.groupby("forecast_week_start", as_index=False)["forecast_units"].sum()
 st.line_chart(chart.set_index("forecast_week_start"))
+st.dataframe(
+    view[["forecast_week_start", "product_name", "category", "forecast_units"]],
+    use_container_width=True,
+    hide_index=True,
+)
 
 if metrics_path.exists():
     metrics = json.loads(metrics_path.read_text(encoding="utf-8"))

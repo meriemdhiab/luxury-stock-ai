@@ -10,15 +10,15 @@ Le dépôt couvre une chaîne de bout en bout : gouvernance des données, archit
 
 ## Vue d'ensemble
 
-| Élément | Description |
-|---|---|
-| **Problème métier** | Anticiper la demande et réduire les risques de rupture ou de surstock. |
-| **Données** | Catalogue produits, ventes hebdomadaires, inventaire et calendrier. |
-| **Modèle** | Baseline par moyenne glissante et modèle Random Forest. |
-| **Stockage** | SQLite pour le démarrage local et PostgreSQL pour l'architecture cible. |
-| **Interface** | Dashboard Streamlit avec filtres et recommandations. |
-| **Déploiement** | Docker Compose. |
-| **Qualité** | Tests, rapports JSON, quarantaine et détection de dérive. |
+| Élément             | Description                                                                                                  |
+| ------------------- | ------------------------------------------------------------------------------------------------------------ |
+| **Problème métier** | Anticiper la demande et réduire les risques de rupture ou de surstock.                                       |
+| **Données**         | Catalogue produits, ventes hebdomadaires, inventaire et calendrier.                                          |
+| **Modèle**          | Baseline par moyenne glissante et modèle Random Forest.                                                      |
+| **Stockage**        | SQLite pour le démarrage local ; schéma PostgreSQL cible (scripts 001 à 004) créé et chargé par Docker Compose. |
+| **Interface**       | Dashboard Streamlit avec filtres et recommandations.                                                         |
+| **Déploiement**     | Docker Compose.                                                                                              |
+| **Qualité**         | Tests, rapports JSON, quarantaine, contrôles SQL et détection de dérive.                                     |
 
 ## Fonctionnalités principales
 
@@ -26,7 +26,7 @@ Le dépôt couvre une chaîne de bout en bout : gouvernance des données, archit
 - validation des schémas et des règles métier ;
 - détection des doublons, dates invalides, valeurs manquantes, quantités négatives et références inconnues ;
 - export des lignes rejetées dans une quarantaine ;
-- stockage SQLite et scripts PostgreSQL ;
+- stockage SQLite et scripts PostgreSQL (schéma, chargement, contrôles qualité, rôles de moindre privilège) ;
 - création de variables retardées et de moyennes glissantes ;
 - comparaison d'une baseline avec un modèle Random Forest ;
 - évaluation temporelle avec MAE et RMSE ;
@@ -34,32 +34,32 @@ Le dépôt couvre une chaîne de bout en bout : gouvernance des données, archit
 - détection des couvertures de stock insuffisantes ;
 - recommandations de réapprovisionnement ;
 - dashboard Streamlit ;
-- tests unitaires, fonctionnels et de robustesse ;
+- tests unitaires, fonctionnels et de robustesse, dont la cohérence schéma SQL et dictionnaire de données ;
 - rapports de qualité, validation, monitoring, dérive et explicabilité ;
 - orchestration Docker Compose ;
-- script de réentraînement conditionnel selon le monitoring et la dérive.
+- workflows GitHub Actions de qualité, de réentraînement et de scan de secrets.
 
 ## Résultats de référence
 
 Le jeu de données est généré avec une seed fixe afin de rendre les résultats reproductibles.
 
-| Indicateur | Valeur |
-|---|---:|
-| Produits | 36 |
-| Semaines disponibles | 116 |
-| Semaines d'entraînement | 104 |
-| Semaines de test | 12 |
-| Lignes de ventes | 4 176 |
-| Lignes d'inventaire | 4 176 |
-| MAE baseline | 4.0498 |
-| MAE modèle candidat | 3.4985 |
-| Amélioration de la MAE | 13.6 % |
+| Indicateur              | Valeur |
+| ----------------------- | ------ |
+| Produits                | 36     |
+| Semaines disponibles    | 116    |
+| Semaines d'entraînement | 104    |
+| Semaines de test        | 12     |
+| Lignes de ventes        | 4 176  |
+| Lignes d'inventaire     | 4 176  |
+| MAE baseline            | 7.2964 |
+| MAE modèle candidat     | 3.8742 |
+| Amélioration de la MAE  | 46.9 % |
 
-> Les résultats sont obtenus sur des données synthétiques. Ils ne constituent pas une garantie de performance sur des données réelles.
+> Les résultats sont obtenus sur des données synthétiques, sur une seule fenêtre de test de 12 semaines, face à une baseline en moyenne glissante de quatre semaines. Ils ne constituent pas une garantie de performance sur des données réelles.
 
 ## Architecture
 
-```text
+```
 Sources CSV
     |
     v
@@ -87,15 +87,18 @@ Prévisions et recommandations de stock
     |
     v
 Dashboard Streamlit
+    |
+    v
+Validation humaine (aucune commande automatique)
 ```
 
-Les choix d'architecture sont détaillés dans [`02_architecture/architecture_decisions.md`](02_architecture/architecture_decisions.md).
+Le schéma de lignage détaillé est dans [`01_governance/data_lineage.png`](01_governance/data_lineage.png). Les choix d'architecture sont détaillés dans [`02_architecture/architecture_decisions.md`](02_architecture/architecture_decisions.md).
 
 ## Installation locale
 
 ### Prérequis
 
-- Python 3.11 ou 3.12 pour l'exécution locale (les versions épinglées de pandas ne sont pas compatibles avec Python 3.14) ;
+- Python 3.11 recommandé pour l'exécution locale ;
 - Git ;
 - Docker Desktop et Docker Compose ;
 - PostgreSQL facultatif, SQLite étant fourni pour un démarrage immédiat.
@@ -104,7 +107,7 @@ Docker est recommandé pour obtenir un environnement reproductible et éviter le
 
 ### Installation Python
 
-```bash
+```
 python3 -m venv .venv
 source .venv/bin/activate
 python -m pip install --upgrade pip
@@ -113,7 +116,7 @@ python -m pip install -r requirements.txt
 
 Sous Windows PowerShell :
 
-```powershell
+```
 python -m venv .venv
 .venv\Scripts\Activate.ps1
 python -m pip install -r requirements.txt
@@ -123,13 +126,7 @@ python -m pip install -r requirements.txt
 
 ### Avec Python
 
-```bash
-make all
 ```
-
-ou, étape par étape :
-
-```bash
 python scripts/generate_data.py
 python 03_pipeline/src/run_pipeline.py
 python 04_ai/src/train.py
@@ -141,27 +138,32 @@ python scripts/check_drift.py
 
 ### Avec Docker Compose
 
-```bash
+Avant le premier lancement, créer le fichier d'environnement et remplacer les mots de passe (le fichier `.env` n'est jamais versionné) :
+
+```
+cp .env.example .env
 docker compose up --build
 ```
 
-Le service `pipeline` génère les données, exécute les contrôles, entraîne le modèle et produit les prévisions. Le service `app` démarre le dashboard Streamlit.
+Le service `postgres` crée le schéma, charge `data/raw`, exécute les contrôles qualité SQL (`003_quality_checks.sql`, un contrôle critique en échec interrompt la création) puis crée les rôles de moindre privilège (`004_roles.sql`). Ces scripts ne s'exécutent qu'à la création du volume : après une régénération des données, lancer `docker compose down -v` avant de relancer. PostgreSQL n'est publié que sur `127.0.0.1`.
+
+Le service `pipeline` génère les données, exécute les contrôles, entraîne le modèle, produit les prévisions, puis génère les rapports de preuve et le rapport de dérive. Le service `app` démarre le dashboard Streamlit.
 
 Le dashboard est accessible à l'adresse :
 
-```text
+```
 http://localhost:8501
 ```
 
 Pour arrêter les services :
 
-```bash
+```
 docker compose down
 ```
 
 Pour supprimer également le volume PostgreSQL local :
 
-```bash
+```
 docker compose down -v
 ```
 
@@ -169,17 +171,15 @@ docker compose down -v
 
 Avec un environnement Python compatible :
 
-```bash
+```
 pytest -q
 ```
 
 Avec Docker :
 
-```bash
+```
 docker compose run --build --rm --no-deps pipeline pytest -q
 ```
-
-Les tests s'exécutent sur une copie temporaire des données brutes : ils ne nécessitent pas d'avoir lancé le pipeline au préalable et ne modifient pas le dépôt.
 
 Les tests couvrent :
 
@@ -189,36 +189,36 @@ Les tests couvrent :
 - la construction des variables ;
 - la séparation temporelle ;
 - la robustesse face à des données dégradées ;
-- la règle de recommandation de stock et le calcul de dérive (PSI).
+- la cohérence entre le schéma SQL et le dictionnaire de données (`tests/test_data_dictionary.py`).
 
 ## Données
 
 Les données sont synthétiques et ne contiennent aucune donnée personnelle.
 
-| Fichier | Description |
-|---|---|
-| `data/raw/products.csv` | Catalogue de 36 produits. |
-| `data/raw/calendar.csv` | Calendrier hebdomadaire et partition TRAIN/TEST. |
-| `data/raw/sales_weekly.csv` | Ventes agrégées par produit et par semaine. |
-| `data/raw/inventory_weekly.csv` | Stock initial, entrées, stock final et couverture. |
-| `data/raw/forecast_horizon.csv` | Horizon futur de prévision. |
+| Fichier                                 | Description                                                |
+| --------------------------------------- | ---------------------------------------------------------- |
+| `data/raw/products.csv`                 | Catalogue de 36 produits.                                  |
+| `data/raw/calendar.csv`                 | Calendrier hebdomadaire et partition TRAIN/TEST.           |
+| `data/raw/sales_weekly.csv`             | Ventes agrégées par produit et par semaine.                |
+| `data/raw/inventory_weekly.csv`         | Stock initial, entrées, stock final et couverture.         |
+| `data/raw/forecast_horizon.csv`         | Horizon futur de prévision.                                |
 | `data/quality/sales_quality_issues.csv` | Fixture volontairement dégradée pour tester les contrôles. |
 
 Pour démontrer la gestion des anomalies :
 
-```bash
+```
 python 03_pipeline/src/run_quality_fixture.py
 ```
 
 Les lignes rejetées sont exportées dans :
 
-```text
+```
 data/processed/quality_demo_sales_quarantine.csv
 ```
 
 ## Modélisation
 
-La cible est `net_units_sold`, c'est-à-dire le nombre d'unités vendues nettes par produit et par semaine.
+La cible est `net_units_sold`, c'est-à-dire le nombre d'unités vendues nettes par produit et par semaine. Il s'agit de ventes et non de demande : pendant une rupture, les ventes sous-estiment la demande.
 
 La baseline correspond à une moyenne glissante sur les quatre dernières semaines. Le modèle candidat est une forêt aléatoire utilisant notamment :
 
@@ -229,7 +229,7 @@ La baseline correspond à une moyenne glissante sur les quatre dernières semain
 - les retards à une, quatre et huit semaines ;
 - la moyenne glissante sur quatre semaines.
 
-L'évaluation respecte l'ordre temporel : les 104 premières semaines servent à l'entraînement (les 8 premières servent d'amorce aux variables retardées) et les 12 dernières au test. Il s'agit d'une évaluation à un pas : pour chaque semaine de test, les retards utilisent les ventes réellement observées. Les prévisions futures, elles, sont récursives et donc plus incertaines au-delà des premières semaines.
+L'évaluation respecte l'ordre temporel : les 104 premières semaines servent à l'entraînement et les 12 dernières au test.
 
 L'indicateur de risque est conservateur. Il est activé lorsque le stock disponible est inférieur à deux semaines de demande prévue. La recommandation de réapprovisionnement vise à atteindre cette couverture cible.
 
@@ -244,34 +244,37 @@ Les résultats sont écrits dans :
 
 Le dossier `reports/` rassemble les preuves techniques du projet :
 
-| Rapport | Contenu |
-|---|---|
-| `ai_data_report.json` | Profil, volumes, partition et hashes des sources. |
-| `validation_report.json` | Validation des sources et lignes rejetées. |
-| `transformation_report.json` | Transformations et fichiers produits. |
-| `quality_report.json` | Contrôles qualité et tests. |
-| `pipeline_report.json` | Étapes d'exécution de la chaîne. |
-| `evaluation_forecasting_report.json` | Performances de la baseline et du modèle candidat. |
-| `bias_report.json` | Écarts indicatifs par catégorie produit. |
-| `explainability_report.json` | Importance des variables et logique métier. |
-| `chain_report.json` | Traçabilité de bout en bout. |
-| `engine_scalability_report.json` | Benchmark local et stratégie de passage à l'échelle. |
-| `monitoring_reference.json` | Seuils de supervision. |
-| `monitoring_report.json` | État des contrôles et politique de réentraînement. |
-| `drift_report.json` | Dérive indicative mesurée par PSI. |
+| Rapport                              | Contenu                                              |
+| ------------------------------------ | ---------------------------------------------------- |
+| `ai_data_report.json`                | Profil, volumes, partition et hashes des sources.    |
+| `validation_report.json`             | Validation des sources et lignes rejetées.           |
+| `transformation_report.json`         | Transformations et fichiers produits.                |
+| `quality_report.json`                | Contrôles qualité et tests.                          |
+| `pipeline_report.json`               | Étapes d'exécution de la chaîne.                     |
+| `evaluation_forecasting_report.json` | Performances de la baseline et du modèle candidat.   |
+| `bias_report.json`                   | Écarts indicatifs par catégorie produit.             |
+| `explainability_report.json`         | Importance des variables et logique métier.          |
+| `chain_report.json`                  | Traçabilité de bout en bout.                         |
+| `engine_scalability_report.json`     | Benchmark local et stratégie de passage à l'échelle. |
+| `monitoring_reference.json`          | Seuils de supervision.                               |
+| `monitoring_report.json`             | État des contrôles et politique de réentraînement.   |
+| `drift_report.json`                  | Dérive indicative mesurée par PSI.                   |
 
 ## Gouvernance et sécurité
 
 Les principaux livrables sont disponibles dans :
 
-- `01_governance/plan_gouvernance.pdf` ;
+- `01_governance/plan_gouvernance.pdf` (source : `plan_gouvernance.md`) ;
 - `01_governance/data_dictionary.xlsx` ;
+- `01_governance/data_lineage.png` ;
 - `01_governance/ai_risk_register.xlsx` ;
 - `01_governance/controls.md` ;
 - `01_governance/data_subject_rights.md` ;
 - `02_architecture/security_controls.md` ;
 - `02_architecture/backup_restore.md` ;
-- `02_architecture/sql/004_roles.sql`.
+- `02_architecture/sql/` (schéma, chargement, contrôles qualité, rôles).
+
+Les mots de passe sont lus depuis un fichier `.env` non versionné ; `.env.example` documente les variables. Les rôles PostgreSQL suivent le moindre privilège (lecture pour le dashboard, écriture pour le pipeline, maintenance accordée temporairement). Le workflow `secret-scan.yml` recherche les secrets à chaque push.
 
 Le MVP local utilise des données synthétiques. Le chiffrement TLS, le chiffrement au repos, la réplication PostgreSQL et le gestionnaire de secrets sont documentés comme contrôles nécessaires en production, mais ne sont pas prétendus actifs dans l'environnement local.
 
@@ -279,37 +282,47 @@ Le MVP local utilise des données synthétiques. Le chiffrement TLS, le chiffrem
 
 Pour calculer la dérive :
 
-```bash
+```
 python scripts/check_drift.py
 ```
 
 Pour déclencher le réentraînement si les seuils l'exigent :
 
-```bash
+```
 python scripts/retrain_if_needed.py
 ```
 
-Le script relance la chaîne complète lorsque `reports/monitoring_report.json` n'est pas au statut `ok` ou que la dérive dépasse le seuil d'alerte.
+Le seuil de réentraînement sur la MAE est fixé dans `config.yaml` (`monitoring.retrain_mae_increase_pct`) ; les autres seuils sont dans `reports/monitoring_reference.json`.
+
+Les workflows GitHub Actions sont disponibles dans `.github/workflows/` :
+
+- `ci.yml` : génération, pipeline, modèle, rapports et tests sur chaque push ou pull request ;
+- `retraining.yml` : exécution planifiée et lancement manuel du réentraînement ;
+- `secret-scan.yml` : recherche de secrets dans l'historique à chaque push.
 
 ## Structure du dépôt
 
-```text
+```
 luxury-stock-ai/
+├── .github/workflows/
 ├── 01_governance/
 ├── 02_architecture/
+│   └── sql/
 ├── 03_pipeline/
 ├── 04_ai/
 ├── 04_deployment/
 ├── app/
 ├── data/
 ├── database/
+├── docs/
+├── presentations/
 ├── reports/
 ├── scripts/
+├── tests/
+├── .env.example
 ├── Dockerfile
 ├── docker-compose.yml
 ├── Makefile
-├── pytest.ini
-├── conftest.py
 ├── pipeline.md
 └── README.md
 ```
@@ -357,6 +370,8 @@ luxury-stock-ai/
 
 - les données sont synthétiques ;
 - les promotions, événements externes et contraintes fournisseurs ne sont pas intégrés ;
+- la cible mesure des ventes et non la demande : les semaines en rupture la sous-estiment ;
+- l'évaluation repose sur une seule fenêtre de test de 12 semaines et une baseline en moyenne glissante, sans rétro-test sur plusieurs fenêtres ;
 - le dashboard est un outil d'aide à la décision ;
 - les recommandations ne déclenchent aucune commande automatiquement ;
 - le monitoring temps réel et la haute disponibilité doivent être activés dans une infrastructure de production ;

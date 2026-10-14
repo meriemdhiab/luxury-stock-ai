@@ -185,22 +185,24 @@ def main():
         artifact = pickle.load(f)
     importances = dict(sorted(zip(FEATURE_COLUMNS, artifact["model"].feature_importances_), key=lambda x: x[1], reverse=True))
     examples = []
-    for _, row in future.sort_values("recommended_replenishment_units", ascending=False).head(5).iterrows():
+    per_product = future.drop_duplicates("product_id")
+    for _, row in per_product.sort_values("recommended_replenishment_units", ascending=False).head(5).iterrows():
         examples.append({
-            "forecast_week_start": row["forecast_week_start"],
             "product_id": row["product_id"],
-            "forecast_units": safe_float(row["forecast_units"]),
-            "closing_stock_units": safe_float(row["closing_stock_units"]),
+            "closing_stock_units": int(row["closing_stock_units"]),
+            "lead_time_days": int(row["lead_time_days"]),
+            "minimum_stock_units": int(row["minimum_stock_units"]),
+            "reorder_point_units": int(row["reorder_point_units"]),
             "risk_of_stockout": bool(row["risk_of_stockout"]),
             "recommended_replenishment_units": int(row["recommended_replenishment_units"]),
-            "explanation": "La recommandation compare deux semaines de demande prévue (couverture cible) au dernier stock disponible.",
+            "explanation": "Le stock est comparé à la demande prévue pendant le délai fournisseur augmentée du stock minimal ; la commande vise ce seuil plus deux semaines de demande.",
         })
     dump("explainability_report.json", {
         "status": "success",
         "generated_at": NOW,
         "method": "importance globale du modèle et règle métier explicite de stock",
         "feature_importance": {k: safe_float(v) for k, v in importances.items()},
-        "business_rule": "replenishment = max(0, ceil(forecast_units * 2 - closing_stock_units))",
+        "business_rule": "reorder_point = demande prévue sur ceil(lead_time_days / 7) semaines + minimum_stock_units ; risque si closing_stock_units < reorder_point ; réappro = max(0, ceil(reorder_point + 2 semaines de demande suivantes - closing_stock_units))",
         "examples": examples,
         "limits": ["l'importance globale ne constitue pas une explication causale locale", "une explication locale plus fine pourra être ajoutée avec SHAP en production"],
     })

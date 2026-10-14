@@ -11,8 +11,8 @@ ROOT = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 from features import FEATURE_COLUMNS, MODEL_PATH, TARGET
 
-# Couverture cible : le stock doit couvrir deux semaines de demande prévue.
-TARGET_COVER_WEEKS = 2
+# Après le délai fournisseur, la commande doit couvrir deux semaines de demande prévue.
+SAFETY_COVER_WEEKS = 2
 
 
 def _feature_row(hist: list[float]) -> dict[str, float]:
@@ -25,10 +25,28 @@ def _feature_row(hist: list[float]) -> dict[str, float]:
 
 
 def add_stock_recommendations(forecasts: pd.DataFrame) -> pd.DataFrame:
-    target_stock = forecasts["forecast_units"] * TARGET_COVER_WEEKS
-    forecasts["risk_of_stockout"] = forecasts["closing_stock_units"] < target_stock
+    """Point de commande par produit : demande prévue pendant le délai fournisseur + stock minimal.
+
+    Le risque et la quantité recommandée sont des valeurs par produit, répétées sur chaque semaine
+    de prévision du produit.
+    """
+    forecasts = forecasts.sort_values(["product_id", "forecast_week_start"]).reset_index(drop=True)
+    horizon_week = forecasts.groupby("product_id").cumcount() + 1
+    lead_weeks = np.ceil(forecasts["lead_time_days"] / 7)
+    in_lead_time = horizon_week <= lead_weeks
+    after_lead_time = (horizon_week > lead_weeks) & (horizon_week <= lead_weeks + SAFETY_COVER_WEEKS)
+
+    weeks_available = forecasts.groupby("product_id")["forecast_units"].transform("count")
+    if (weeks_available < lead_weeks + SAFETY_COVER_WEEKS).any():
+        raise ValueError("L'horizon de prévision est plus court que le délai fournisseur + la couverture cible")
+
+    lead_time_demand = forecasts["forecast_units"].where(in_lead_time, 0).groupby(forecasts["product_id"]).transform("sum")
+    cover_demand = forecasts["forecast_units"].where(after_lead_time, 0).groupby(forecasts["product_id"]).transform("sum")
+
+    forecasts["reorder_point_units"] = np.ceil(lead_time_demand + forecasts["minimum_stock_units"]).astype(int)
+    forecasts["risk_of_stockout"] = forecasts["closing_stock_units"] < forecasts["reorder_point_units"]
     forecasts["recommended_replenishment_units"] = np.maximum(
-        0, np.ceil(target_stock - forecasts["closing_stock_units"])
+        0, np.ceil(forecasts["reorder_point_units"] + cover_demand - forecasts["closing_stock_units"])
     ).astype(int)
     return forecasts
 

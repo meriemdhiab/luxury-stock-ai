@@ -1,26 +1,45 @@
+# Avant le premier lancement : cp .env.example .env  puis renseigner les mots de passe.
+# Le fichier .env est ignoré par Git ; aucun secret n est écrit dans ce dépôt.
 services:
   postgres:
     image: postgres:16-alpine
     environment:
-      POSTGRES_DB: luxury_stock
-      POSTGRES_USER: luxury_stock
-      POSTGRES_PASSWORD: luxury_stock
+      POSTGRES_DB: ${POSTGRES_DB:-luxury_stock}
+      POSTGRES_USER: ${POSTGRES_USER:-luxury_stock}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?Définir POSTGRES_PASSWORD dans .env (voir .env.example)}
+      # Lus par 004_roles.sql pour créer les rôles de connexion
+      LUXURY_APP_PASSWORD: ${LUXURY_APP_PASSWORD:?Définir LUXURY_APP_PASSWORD dans .env}
+      LUXURY_PIPELINE_PASSWORD: ${LUXURY_PIPELINE_PASSWORD:?Définir LUXURY_PIPELINE_PASSWORD dans .env}
     ports:
-      - "5432:5432"
+      # Accessible uniquement depuis cette machine
+      - "127.0.0.1:${POSTGRES_PORT:-5432}:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
+      # Exécutés dans l ordre alphabétique, une seule fois, à la création du volume
       - ./02_architecture/sql/001_schema.sql:/docker-entrypoint-initdb.d/001_schema.sql:ro
       - ./02_architecture/sql/002_seed_from_csv_docker.sql:/docker-entrypoint-initdb.d/002_seed_from_csv.sql:ro
+      - ./02_architecture/sql/003_quality_checks.sql:/docker-entrypoint-initdb.d/003_quality_checks.sql:ro
+      - ./02_architecture/sql/004_roles.sql:/docker-entrypoint-initdb.d/004_roles.sql:ro
       - ./data:/data:ro
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U luxury_stock -d luxury_stock"]
+      test: ["CMD-SHELL", "pg_isready -U $$POSTGRES_USER -d $$POSTGRES_DB"]
       interval: 5s
       timeout: 5s
       retries: 10
 
   pipeline:
     build: .
-    command: ["sh", "-c", "python scripts/generate_data.py && python 03_pipeline/src/run_pipeline.py && python 04_ai/src/train.py && python 04_ai/src/evaluate.py && python 04_ai/src/predict.py"]
+    command:
+      - sh
+      - -c
+      - >-
+        python scripts/generate_data.py
+        && python 03_pipeline/src/run_pipeline.py
+        && python 04_ai/src/train.py
+        && python 04_ai/src/evaluate.py
+        && python 04_ai/src/predict.py
+        && python scripts/generate_reports.py
+        && python scripts/check_drift.py
     volumes:
       - .:/app
     environment:

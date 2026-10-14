@@ -1,7 +1,7 @@
 {
   "status": "success",
-  "generated_at": "2026-10-14T18:32:05.763598+00:00",
-  "files_checked": 33,
+  "generated_at": "2026-10-14T19:12:58.117412+00:00",
+  "files_checked": 37,
   "checks": [
     "schema validation",
     "business rules",
@@ -23,14 +23,14 @@
     "rejected_rows": 0,
     "clean_rows": 4176,
     "quarantine_rows": 0,
-    "run_timestamp_utc": "2026-10-14T18:32:00.662268+00:00",
+    "run_timestamp_utc": "2026-10-14T19:12:52.157239+00:00",
     "source_sales": "data/raw/sales_weekly.csv",
     "output_database": "database/luxury_stock_pipeline.sqlite"
   },
   "unit_tests": {
     "passed": true,
     "runner": "pytest -q",
-    "summary": "11 passed in 0.17s"
+    "summary": "14 passed in 3.32s"
   },
   "errors": [],
   "warnings": []
