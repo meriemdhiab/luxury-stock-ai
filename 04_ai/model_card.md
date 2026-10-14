@@ -1,6 +1,5 @@
 # Model card, prévision de demande
 
-Version 1.0, 14 octobre 2026.
 
 ## Usage prévu
 
