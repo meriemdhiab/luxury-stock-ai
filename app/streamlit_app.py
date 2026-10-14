@@ -2,7 +2,6 @@ from __future__ import annotations
 
 from pathlib import Path
 import json
-import sqlite3
 
 import pandas as pd
 import streamlit as st
@@ -15,17 +14,23 @@ st.caption("Prévision de la demande et aide à la décision pour une marque fic
 
 forecast_path = ROOT / "04_ai/forecast_future.csv"
 metrics_path = ROOT / "04_ai/metrics.json"
-db_path = ROOT / "database/luxury_stock_pipeline.sqlite"
+products_path = ROOT / "data/processed/products_clean.csv"
+
+
+@st.cache_data
+def load_forecast(forecast_mtime: float) -> pd.DataFrame:
+    # forecast_mtime invalide le cache quand predict.py régénère les prévisions.
+    forecast = pd.read_csv(forecast_path)
+    products = pd.read_csv(products_path if products_path.exists() else ROOT / "data/raw/products.csv")
+    return forecast.merge(products[["product_id", "product_name", "category", "collection"]], on="product_id", how="left")
+
 
 if not forecast_path.exists():
     st.warning("Les prévisions ne sont pas encore disponibles. Exécutez le pipeline, l'entraînement et la prédiction.")
     st.code("python 03_pipeline/src/run_pipeline.py\npython 04_ai/src/train.py\npython 04_ai/src/evaluate.py\npython 04_ai/src/predict.py")
     st.stop()
 
-forecast = pd.read_csv(forecast_path)
-products_path = ROOT / "data/processed/products_clean.csv"
-products = pd.read_csv(products_path) if products_path.exists() else pd.read_csv(ROOT / "data/raw/products.csv")
-forecast = forecast.merge(products[["product_id", "product_name", "category", "collection"]], on="product_id", how="left")
+forecast = load_forecast(forecast_path.stat().st_mtime)
 
 with st.sidebar:
     st.header("Filtres")
@@ -36,13 +41,16 @@ with st.sidebar:
     selected_products = st.multiselect("Produits", product_options)
 
 view = forecast.copy()
-if category != "Toutes": view = view[view["category"] == category]
-if risk_only: view = view[view["risk_of_stockout"]]
-if selected_products: view = view[view["product_name"].isin(selected_products)]
+if category != "Toutes":
+    view = view[view["category"] == category]
+if risk_only:
+    view = view[view["risk_of_stockout"]]
+if selected_products:
+    view = view[view["product_name"].isin(selected_products)]
 
 col1, col2, col3, col4 = st.columns(4)
 col1.metric("Produits analysés", int(view["product_id"].nunique()))
-col2.metric("Risques de rupture", int(view["risk_of_stockout"].sum()))
+col2.metric("Semaines-produit à risque", int(view["risk_of_stockout"].sum()))
 col3.metric("Unités prévues", int(view["forecast_units"].sum()))
 col4.metric("Unités à réapprovisionner", int(view["recommended_replenishment_units"].sum()))
 

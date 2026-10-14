@@ -1,13 +1,13 @@
 {
   "status": "success",
-  "generated_at": "2026-10-12T17:09:56.243379+00:00",
+  "generated_at": "2026-10-14T18:32:05.763598+00:00",
   "benchmark": {
     "rows": 4176,
     "products": 36,
     "operation": "grouped rolling feature calculation",
     "runs": 3,
-    "average_seconds": 0.003842,
-    "rows_per_second": 1087011.69
+    "average_seconds": 0.001692,
+    "rows_per_second": 2467659.63
   },
   "scale_strategy": [
     "partition by product",

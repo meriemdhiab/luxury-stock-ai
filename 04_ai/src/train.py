@@ -9,30 +9,39 @@ from sklearn.ensemble import RandomForestRegressor
 
 ROOT = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(Path(__file__).resolve().parent))
-from features import FEATURE_COLUMNS, TARGET, load_training_frame
+from features import FEATURE_COLUMNS, MODEL_PATH, TARGET, load_training_frame, product_order
 
-MODEL_DIR = ROOT / "04_ai/models"
-MODEL_DIR.mkdir(parents=True, exist_ok=True)
+RANDOM_STATE = 42
 
 
-def train(root: Path = ROOT):
+def train(root: Path = ROOT) -> dict:
     df = load_training_frame(root)
-    train_df = df[df["dataset_split"] == "TRAIN"].copy()
-    X = train_df[FEATURE_COLUMNS]
-    y = train_df[TARGET]
+    train_df = df[df["dataset_split"] == "TRAIN"]
     model = RandomForestRegressor(
         n_estimators=160,
         max_depth=12,
         min_samples_leaf=2,
-        random_state=42,
+        random_state=RANDOM_STATE,
         n_jobs=-1,
     )
-    model.fit(X, y)
-    artifact = {"model": model, "feature_columns": FEATURE_COLUMNS, "target": TARGET, "random_state": 42}
-    with (MODEL_DIR / "candidate_model.pkl").open("wb") as f:
+    model.fit(train_df[FEATURE_COLUMNS], train_df[TARGET])
+
+    products = pd.read_csv(root / "data/processed/products_clean.csv")
+    artifact = {
+        "model": model,
+        "feature_columns": FEATURE_COLUMNS,
+        "target": TARGET,
+        "random_state": RANDOM_STATE,
+        "product_order": product_order(products["product_id"]),
+        "train_rows": int(len(train_df)),
+    }
+    model_path = root / MODEL_PATH
+    model_path.parent.mkdir(parents=True, exist_ok=True)
+    with model_path.open("wb") as f:
         pickle.dump(artifact, f)
     print(f"Modèle entraîné sur {len(train_df)} lignes")
     return artifact
+
 
 if __name__ == "__main__":
     train()

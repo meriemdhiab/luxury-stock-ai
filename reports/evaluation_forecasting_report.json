@@ -1,21 +1,21 @@
 {
   "status": "success",
-  "generated_at": "2026-10-12T17:09:56.243379+00:00",
+  "generated_at": "2026-10-14T18:32:05.763598+00:00",
   "dataset_version": "luxury-stock-ai-v1",
   "target": "net_units_sold",
-  "protocol": "Temporal split, 104 train weeks and 12 test weeks",
+  "protocol": "Temporal split, 96 train weeks (after 8-week warm-up) and 12 test weeks, one-step-ahead (lags use observed values)",
   "baseline": {
     "name": "rolling_mean_4",
-    "mae": 7.2964,
-    "rmse": 9.9282
+    "mae": 4.0498,
+    "rmse": 5.1581
   },
   "candidate": {
     "name": "random_forest_regressor",
-    "mae": 3.8742,
-    "rmse": 4.9359
+    "mae": 3.4985,
+    "rmse": 4.5476
   },
-  "improvement_mae_percent": 46.9,
-  "test_rows": 420,
+  "improvement_mae_percent": 13.61,
+  "test_rows": 432,
   "actual_vs_predicted_file": "04_ai/predictions_test.csv",
   "limitations": [
     "données synthétiques",

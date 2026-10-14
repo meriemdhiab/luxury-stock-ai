@@ -1,15 +1,17 @@
 from __future__ import annotations
-import csv, math, random, sqlite3
+import csv
+import math
+import random
+import sqlite3
 from datetime import date, timedelta
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
 RAW = ROOT / 'data' / 'raw'
 QUALITY = ROOT / 'data' / 'quality'
-SQL = ROOT / '02_architecture' / 'sql'
 DB = ROOT / 'database'
-SCRIPTS = ROOT / 'scripts'
-for p in (RAW, QUALITY, SQL, DB, SCRIPTS): p.mkdir(parents=True, exist_ok=True)
+for p in (RAW, QUALITY, DB):
+    p.mkdir(parents=True, exist_ok=True)
 
 SEED = 20261012
 rng = random.Random(SEED)
@@ -151,16 +153,9 @@ quality[18]['units_sold'] = '-4'  # invalid negative quantity
 quality[25]['product_id'] = 'P999'  # unknown product
 write_csv(QUALITY/'sales_quality_issues.csv', quality, list(sales[0].keys()))
 
-# PostgreSQL schema and seed scripts.
-(SQL/'001_schema.sql').write_text('''-- Luxury Stock AI, PostgreSQL schema\nCREATE SCHEMA IF NOT EXISTS luxury_stock;\nSET search_path TO luxury_stock;\n\nDROP VIEW IF EXISTS vw_latest_inventory;\nDROP VIEW IF EXISTS vw_sales_test;\nDROP VIEW IF EXISTS vw_sales_train;\nDROP TABLE IF EXISTS fact_forecast_weekly, fact_inventory_weekly, fact_sales_weekly, dim_calendar, dim_product CASCADE;\n\nCREATE TABLE dim_product (\n    product_id VARCHAR(10) PRIMARY KEY,\n    product_name TEXT NOT NULL,\n    category TEXT NOT NULL,\n    collection TEXT NOT NULL,\n    material TEXT NOT NULL,\n    color TEXT NOT NULL,\n    unit_price_eur NUMERIC(12,2) NOT NULL CHECK (unit_price_eur > 0),\n    base_weekly_demand NUMERIC(12,2) NOT NULL CHECK (base_weekly_demand >= 0),\n    launch_date DATE NOT NULL,\n    lead_time_days INTEGER NOT NULL CHECK (lead_time_days > 0),\n    minimum_stock_units INTEGER NOT NULL CHECK (minimum_stock_units >= 0),\n    active_flag BOOLEAN NOT NULL DEFAULT TRUE\n);\n\nCREATE TABLE dim_calendar (\n    week_start DATE PRIMARY KEY,\n    week_index INTEGER NOT NULL UNIQUE,\n    year INTEGER NOT NULL,\n    iso_week INTEGER NOT NULL,\n    month INTEGER NOT NULL CHECK (month BETWEEN 1 AND 12),\n    quarter INTEGER NOT NULL CHECK (quarter BETWEEN 1 AND 4),\n    season TEXT NOT NULL,\n    luxury_peak_flag BOOLEAN NOT NULL,\n    dataset_split TEXT NOT NULL CHECK (dataset_split IN ('TRAIN','TEST'))\n);\n\nCREATE TABLE fact_sales_weekly (\n    week_start DATE NOT NULL REFERENCES dim_calendar(week_start),\n    product_id VARCHAR(10) NOT NULL REFERENCES dim_product(product_id),\n    units_sold INTEGER NOT NULL CHECK (units_sold >= 0),\n    returns_units INTEGER NOT NULL CHECK (returns_units >= 0),\n    net_units_sold INTEGER NOT NULL CHECK (net_units_sold >= 0),\n    revenue_eur NUMERIC(14,2) NOT NULL CHECK (revenue_eur >= 0),\n    channel TEXT NOT NULL,\n    PRIMARY KEY (week_start, product_id)\n);\n\nCREATE TABLE fact_inventory_weekly (\n    week_start DATE NOT NULL REFERENCES dim_calendar(week_start),\n    product_id VARCHAR(10) NOT NULL REFERENCES dim_product(product_id),\n    opening_stock_units INTEGER NOT NULL CHECK (opening_stock_units >= 0),\n    inbound_units INTEGER NOT NULL CHECK (inbound_units >= 0),\n    units_sold INTEGER NOT NULL CHECK (units_sold >= 0),\n    closing_stock_units INTEGER NOT NULL CHECK (closing_stock_units >= 0),\n    stockout_flag BOOLEAN NOT NULL,\n    days_of_cover NUMERIC(12,2) NOT NULL CHECK (days_of_cover >= 0),\n    PRIMARY KEY (week_start, product_id)\n);\n\nCREATE TABLE fact_forecast_weekly (\n    forecast_week_start DATE NOT NULL,\n    product_id VARCHAR(10) NOT NULL REFERENCES dim_product(product_id),\n    forecast_units NUMERIC(12,2) NOT NULL CHECK (forecast_units >= 0),\n    model_name TEXT NOT NULL,\n    created_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,\n    PRIMARY KEY (forecast_week_start, product_id, model_name)\n);\n\nCREATE INDEX idx_sales_product_week ON fact_sales_weekly(product_id, week_start);\nCREATE INDEX idx_inventory_product_week ON fact_inventory_weekly(product_id, week_start);\nCREATE INDEX idx_sales_channel ON fact_sales_weekly(channel);\n\nCREATE VIEW vw_sales_train AS\nSELECT s.* FROM fact_sales_weekly s\nJOIN dim_calendar c USING (week_start)\nWHERE c.dataset_split = 'TRAIN';\n\nCREATE VIEW vw_sales_test AS\nSELECT s.* FROM fact_sales_weekly s\nJOIN dim_calendar c USING (week_start)\nWHERE c.dataset_split = 'TEST';\n\nCREATE VIEW vw_latest_inventory AS\nSELECT DISTINCT ON (product_id) *\nFROM fact_inventory_weekly\nORDER BY product_id, week_start DESC;\n''', encoding='utf-8')
-
-(SQL/'002_seed_from_csv.sql').write_text('''-- Run from the project root with psql.\nSET search_path TO luxury_stock;\n\n\\copy dim_product FROM 'data/raw/products.csv' WITH (FORMAT csv, HEADER true);\n\\copy dim_calendar FROM 'data/raw/calendar.csv' WITH (FORMAT csv, HEADER true);\n\\copy fact_sales_weekly FROM 'data/raw/sales_weekly.csv' WITH (FORMAT csv, HEADER true);\n\\copy fact_inventory_weekly FROM 'data/raw/inventory_weekly.csv' WITH (FORMAT csv, HEADER true);\n''', encoding='utf-8')
-
-(SQL/'003_quality_checks.sql').write_text('''SET search_path TO luxury_stock;\n\n-- Expected row counts\nSELECT 'products' AS table_name, COUNT(*) AS row_count FROM dim_product\nUNION ALL SELECT 'calendar', COUNT(*) FROM dim_calendar\nUNION ALL SELECT 'sales', COUNT(*) FROM fact_sales_weekly\nUNION ALL SELECT 'inventory', COUNT(*) FROM fact_inventory_weekly;\n\n-- Referential and business checks\nSELECT COUNT(*) AS negative_sales FROM fact_sales_weekly WHERE units_sold < 0 OR net_units_sold < 0;\nSELECT COUNT(*) AS invalid_inventory FROM fact_inventory_weekly WHERE closing_stock_units < 0 OR days_of_cover < 0;\nSELECT COUNT(*) AS duplicate_sales FROM (SELECT week_start, product_id, COUNT(*) FROM fact_sales_weekly GROUP BY 1,2 HAVING COUNT(*) > 1) d;\nSELECT COUNT(*) AS stockout_weeks FROM fact_inventory_weekly WHERE stockout_flag;\n''', encoding='utf-8')
-
 # SQLite database for immediate local use and validation.
 sqlite_path = DB/'luxury_stock.sqlite'
-if sqlite_path.exists(): sqlite_path.unlink()
+sqlite_path.unlink(missing_ok=True)
 con = sqlite3.connect(sqlite_path)
 cur = con.cursor()
 cur.executescript('''
@@ -193,12 +188,6 @@ CREATE VIEW vw_latest_inventory AS SELECT i.* FROM fact_inventory_weekly i JOIN 
 ''')
 con.commit(); con.close()
 
-
-(ROOT/'data'/'README.md').write_text('''# Données Luxury Stock AI\n\nJeu de données synthétique reproductible, généré avec la graine `20261012`. Il ne contient aucune donnée personnelle.\n\n## Fichiers\n\n- `raw/products.csv` : catalogue produit, 36 produits.\n- `raw/calendar.csv` : 116 semaines, 104 semaines TRAIN et 12 semaines TEST.\n- `raw/sales_weekly.csv` : ventes hebdomadaires par produit.\n- `raw/inventory_weekly.csv` : état hebdomadaire des stocks.\n- `raw/forecast_horizon.csv` : 12 semaines après la dernière date observée, pour générer des prévisions futures.\n- `quality/sales_quality_issues.csv` : fixture volontairement dégradée pour tester les contrôles qualité.\n\n## Principe d'évaluation\n\nLes 104 premières semaines doivent être utilisées pour l'entraînement et les 12 dernières pour l'évaluation temporelle. Il ne faut pas utiliser les semaines TEST pour construire les variables d'entraînement.\n\n## Régénération\n\nDepuis le dossier `luxury-stock-ai` :\n\n```bash\npython scripts/generate_data.py\n```\n\nLa base SQLite est fournie pour un démarrage immédiat. Les scripts SQL du dossier `02_architecture/sql` permettent de charger les mêmes données dans PostgreSQL.\n''', encoding='utf-8')
-
-(ROOT/'database'/'README.md').write_text('''# Base de données\n\n## Démarrage immédiat\n\nLa base `luxury_stock.sqlite` peut être ouverte avec SQLite, DuckDB, Python ou un outil graphique.\n\nExemple :\n\n```bash\nsqlite3 database/luxury_stock.sqlite\n.tables\nSELECT COUNT(*) FROM fact_sales_weekly;\nSELECT * FROM vw_sales_train LIMIT 5;\n```\n\n## PostgreSQL\n\nDepuis la racine du projet :\n\n```bash\ncreatedb luxury_stock\npsql -d luxury_stock -f 02_architecture/sql/001_schema.sql\npsql -d luxury_stock -f 02_architecture/sql/002_seed_from_csv.sql\npsql -d luxury_stock -f 02_architecture/sql/003_quality_checks.sql\n```\n\nLe schéma PostgreSQL est `luxury_stock`.\n''', encoding='utf-8')
-
-(ROOT/'docs'/'dataset_profile.md').write_text(f'''# Profil du jeu de données\n\n- Graine aléatoire : `{SEED}`\n- Produits : `{len(products)}`\n- Semaines : `{len(calendar)}`\n- Lignes de ventes : `{len(sales)}`\n- Lignes d'inventaire : `{len(inventory)}`\n- Période TRAIN : `{calendar[0]["week_start"]}` à `{calendar[train_weeks-1]["week_start"]}`\n- Période TEST : `{calendar[train_weeks]["week_start"]}` à `{calendar[-1]["week_start"]}`\n- Horizon futur : `{horizon[0]["forecast_week_start"]}` à `{horizon[-1]["forecast_week_start"]}`\n- Données personnelles : aucune, données synthétiques\n\nLe jeu a été conçu pour permettre une démonstration des quatre blocs : gouvernance, architecture, pipeline et solution IA déployable.\n''', encoding='utf-8')
 
 print('Generated project data under', ROOT)
 print('Products:', len(products))

@@ -37,7 +37,7 @@ Le dépôt couvre une chaîne de bout en bout : gouvernance des données, archit
 - tests unitaires, fonctionnels et de robustesse ;
 - rapports de qualité, validation, monitoring, dérive et explicabilité ;
 - orchestration Docker Compose ;
-- workflows GitHub Actions de qualité et de réentraînement.
+- script de réentraînement conditionnel selon le monitoring et la dérive.
 
 ## Résultats de référence
 
@@ -51,9 +51,9 @@ Le jeu de données est généré avec une seed fixe afin de rendre les résultat
 | Semaines de test | 12 |
 | Lignes de ventes | 4 176 |
 | Lignes d'inventaire | 4 176 |
-| MAE baseline | 7.2964 |
-| MAE modèle candidat | 3.8742 |
-| Amélioration de la MAE | 46.9 % |
+| MAE baseline | 4.0498 |
+| MAE modèle candidat | 3.4985 |
+| Amélioration de la MAE | 13.6 % |
 
 > Les résultats sont obtenus sur des données synthétiques. Ils ne constituent pas une garantie de performance sur des données réelles.
 
@@ -95,7 +95,7 @@ Les choix d'architecture sont détaillés dans [`02_architecture/architecture_de
 
 ### Prérequis
 
-- Python 3.11 recommandé pour l'exécution locale ;
+- Python 3.11 ou 3.12 pour l'exécution locale (les versions épinglées de pandas ne sont pas compatibles avec Python 3.14) ;
 - Git ;
 - Docker Desktop et Docker Compose ;
 - PostgreSQL facultatif, SQLite étant fourni pour un démarrage immédiat.
@@ -122,6 +122,12 @@ python -m pip install -r requirements.txt
 ## Exécution complète
 
 ### Avec Python
+
+```bash
+make all
+```
+
+ou, étape par étape :
 
 ```bash
 python scripts/generate_data.py
@@ -173,6 +179,8 @@ Avec Docker :
 docker compose run --build --rm --no-deps pipeline pytest -q
 ```
 
+Les tests s'exécutent sur une copie temporaire des données brutes : ils ne nécessitent pas d'avoir lancé le pipeline au préalable et ne modifient pas le dépôt.
+
 Les tests couvrent :
 
 - la validation des données ;
@@ -180,7 +188,8 @@ Les tests couvrent :
 - la quarantaine ;
 - la construction des variables ;
 - la séparation temporelle ;
-- la robustesse face à des données dégradées.
+- la robustesse face à des données dégradées ;
+- la règle de recommandation de stock et le calcul de dérive (PSI).
 
 ## Données
 
@@ -220,7 +229,7 @@ La baseline correspond à une moyenne glissante sur les quatre dernières semain
 - les retards à une, quatre et huit semaines ;
 - la moyenne glissante sur quatre semaines.
 
-L'évaluation respecte l'ordre temporel : les 104 premières semaines servent à l'entraînement et les 12 dernières au test.
+L'évaluation respecte l'ordre temporel : les 104 premières semaines servent à l'entraînement (les 8 premières servent d'amorce aux variables retardées) et les 12 dernières au test. Il s'agit d'une évaluation à un pas : pour chaque semaine de test, les retards utilisent les ventes réellement observées. Les prévisions futures, elles, sont récursives et donc plus incertaines au-delà des premières semaines.
 
 L'indicateur de risque est conservateur. Il est activé lorsque le stock disponible est inférieur à deux semaines de demande prévue. La recommandation de réapprovisionnement vise à atteindre cette couverture cible.
 
@@ -280,16 +289,12 @@ Pour déclencher le réentraînement si les seuils l'exigent :
 python scripts/retrain_if_needed.py
 ```
 
-Les workflows GitHub Actions sont disponibles dans `.github/workflows/` :
-
-- `ci.yml` : génération, pipeline, modèle, rapports et tests sur chaque push ou pull request ;
-- `retraining.yml` : exécution planifiée et lancement manuel du réentraînement.
+Le script relance la chaîne complète lorsque `reports/monitoring_report.json` n'est pas au statut `ok` ou que la dérive dépasse le seuil d'alerte.
 
 ## Structure du dépôt
 
 ```text
 luxury-stock-ai/
-├── .github/workflows/
 ├── 01_governance/
 ├── 02_architecture/
 ├── 03_pipeline/
@@ -298,13 +303,13 @@ luxury-stock-ai/
 ├── app/
 ├── data/
 ├── database/
-├── docs/
-├── presentations/
 ├── reports/
 ├── scripts/
 ├── Dockerfile
 ├── docker-compose.yml
 ├── Makefile
+├── pytest.ini
+├── conftest.py
 ├── pipeline.md
 └── README.md
 ```

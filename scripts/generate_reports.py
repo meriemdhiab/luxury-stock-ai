@@ -3,7 +3,6 @@ from __future__ import annotations
 import hashlib
 import json
 import pickle
-import re
 import subprocess
 import sys
 import time
@@ -18,7 +17,7 @@ ROOT = Path(__file__).resolve().parents[1]
 REPORTS = ROOT / "reports"
 REPORTS.mkdir(exist_ok=True)
 sys.path.insert(0, str(ROOT / "04_ai/src"))
-from features import FEATURE_COLUMNS, load_training_frame
+from features import FEATURE_COLUMNS, MODEL_PATH
 
 NOW = datetime.now(timezone.utc).isoformat()
 
@@ -40,16 +39,44 @@ def safe_float(x):
     return round(float(x), 6)
 
 
+def count_project_files(patterns: tuple[str, ...]) -> int:
+    ignored = {".git", ".venv", "venv", "__pycache__", ".pytest_cache"}
+    return sum(
+        1
+        for pattern in patterns
+        for path in ROOT.rglob(pattern)
+        if not ignored.intersection(path.relative_to(ROOT).parts)
+    )
+
+
+def run_tests() -> dict:
+    """Exécute réellement pytest pour que le rapport reflète l'état des tests."""
+    result = subprocess.run([sys.executable, "-m", "pytest", "-q"], cwd=ROOT, capture_output=True, text=True)
+    lines = [line for line in result.stdout.strip().splitlines() if line.strip()]
+    return {"passed": result.returncode == 0, "runner": "pytest -q", "summary": lines[-1] if lines else result.stderr.strip()[-500:]}
+
+
+def errors_by_group(predictions: pd.DataFrame, column: str) -> dict:
+    return {
+        str(key): {
+            "rows": int(len(group)),
+            "mae": safe_float(mean_absolute_error(group["net_units_sold"], group["candidate_prediction"])),
+            "rmse": safe_float(mean_squared_error(group["net_units_sold"], group["candidate_prediction"]) ** 0.5),
+        }
+        for key, group in predictions.groupby(column)
+    }
+
+
 def main():
     products = pd.read_csv(ROOT / "data/raw/products.csv")
     calendar = pd.read_csv(ROOT / "data/raw/calendar.csv")
     sales = pd.read_csv(ROOT / "data/raw/sales_weekly.csv")
     inventory = pd.read_csv(ROOT / "data/raw/inventory_weekly.csv")
-    quality = pd.read_csv(ROOT / "data/processed/quality_report.json") if False else json.loads((ROOT / "data/processed/quality_report.json").read_text(encoding="utf-8"))
+    quality = json.loads((ROOT / "data/processed/quality_report.json").read_text(encoding="utf-8"))
     metrics = json.loads((ROOT / "04_ai/metrics.json").read_text(encoding="utf-8"))
     predictions = pd.read_csv(ROOT / "04_ai/predictions_test.csv")
     future = pd.read_csv(ROOT / "04_ai/forecast_future.csv")
-    df = load_training_frame(ROOT)
+    sales_valid_rows = int(len(sales) - quality["quarantine_rows"])
 
     dump("ai_data_report.json", {
         "status": "success",
@@ -74,7 +101,7 @@ def main():
         "sources": [
             {"source": "products.csv", "input_rows": int(len(products)), "valid_rows": int(len(products)), "rejected_rows": 0},
             {"source": "calendar.csv", "input_rows": int(len(calendar)), "valid_rows": int(len(calendar)), "rejected_rows": 0},
-            {"source": "sales_weekly.csv", "input_rows": int(len(sales)), "valid_rows": int(len(sales)), "rejected_rows": int(quality["quarantine_rows"])},
+            {"source": "sales_weekly.csv", "input_rows": int(len(sales)), "valid_rows": sales_valid_rows, "rejected_rows": int(quality["quarantine_rows"])},
             {"source": "inventory_weekly.csv", "input_rows": int(len(inventory)), "valid_rows": int(len(inventory)), "rejected_rows": 0},
         ],
         "quality_fixture": {"source": "data/quality/sales_quality_issues.csv", "expected_issue_types": ["duplicate_key", "invalid_date", "missing_numeric_value", "negative_units", "unknown_product"]},
@@ -87,8 +114,8 @@ def main():
         "status": "success",
         "generated_at": NOW,
         "processed_files": {
-            "products_raw.csv": int(len(products)),
-            "calendar_raw.csv": int(len(calendar)),
+            "products.csv": int(len(products)),
+            "calendar.csv": int(len(calendar)),
             "sales_weekly.csv": int(len(sales)),
             "inventory_weekly.csv": int(len(inventory)),
         },
@@ -100,15 +127,16 @@ def main():
         "rules": ["dates parsed", "numeric fields coerced", "duplicates rejected", "unknown products rejected", "negative quantities rejected"],
     })
 
+    tests = run_tests()
     dump("quality_report.json", {
         "status": "success",
         "generated_at": NOW,
-        "files_checked": int(len(list(ROOT.rglob("*.py")))) + int(len(list(ROOT.rglob("*.yml")))) + int(len(list(ROOT.rglob("*.md")))),
+        "files_checked": count_project_files(("*.py", "*.yml", "*.yaml", "*.md")),
         "checks": ["schema validation", "business rules", "duplicate detection", "quarantine export", "temporal split", "model tests", "secret hygiene"],
         "pipeline_quality": quality,
-        "unit_tests": {"passed": True, "runner": "manual smoke execution in current Computer; pytest included in requirements and Docker image", "summary": ["feature construction passed", "quality fixture detection passed", "temporal split passed"]},
-        "errors": [],
-        "warnings": ["pytest executable is not installed in the current Computer image; run pytest inside the project environment or Docker"],
+        "unit_tests": tests,
+        "errors": [] if tests["passed"] else ["pytest a signalé des échecs"],
+        "warnings": [],
     })
 
     dump("pipeline_report.json", {
@@ -141,25 +169,19 @@ def main():
         "limitations": ["données synthétiques", "évaluation hors échantillon limitée à 12 semaines", "pas de données externes comme promotions ou événements macroéconomiques"],
     })
 
-    group_metrics = {}
     test_pred = predictions.merge(products[["product_id", "category", "collection"]], on="product_id", how="left")
-    for key, group in test_pred.groupby("category"):
-        group_metrics[str(key)] = {
-            "rows": int(len(group)),
-            "mae": safe_float(mean_absolute_error(group["net_units_sold"], group["candidate_prediction"])),
-            "rmse": safe_float(mean_squared_error(group["net_units_sold"], group["candidate_prediction"]) ** 0.5),
-        }
+    group_metrics = {dimension: errors_by_group(test_pred, dimension) for dimension in ("category", "collection")}
     dump("bias_report.json", {
         "status": "indicative_gaps",
         "generated_at": NOW,
         "dataset_version": "luxury-stock-ai-v1",
         "method": "comparaison des erreurs du modèle par catégorie et collection",
         "protected_data_note": "Aucune donnée sensible ou attribut personnel n'est collecté. Les groupes analysés sont des segments produits, pas des groupes de personnes.",
-        "quality_by_product_group": {"category": group_metrics},
+        "quality_by_product_group": group_metrics,
         "limits": ["les données sont synthétiques", "les groupes produits ne constituent pas une analyse de discrimination individuelle", "les résultats doivent être réévalués avec des données opérationnelles"],
     })
 
-    with (ROOT / "04_ai/models/candidate_model.pkl").open("rb") as f:
+    with (ROOT / MODEL_PATH).open("rb") as f:
         artifact = pickle.load(f)
     importances = dict(sorted(zip(FEATURE_COLUMNS, artifact["model"].feature_importances_), key=lambda x: x[1], reverse=True))
     examples = []
@@ -171,7 +193,7 @@ def main():
             "closing_stock_units": safe_float(row["closing_stock_units"]),
             "risk_of_stockout": bool(row["risk_of_stockout"]),
             "recommended_replenishment_units": int(row["recommended_replenishment_units"]),
-            "explanation": "La recommandation compare la demande prévue à deux semaines de couverture cible et au stock disponible.",
+            "explanation": "La recommandation compare deux semaines de demande prévue (couverture cible) au dernier stock disponible.",
         })
     dump("explainability_report.json", {
         "status": "success",

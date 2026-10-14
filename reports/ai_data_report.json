@@ -1,7 +1,7 @@
 {
   "status": "success",
   "dataset_version": "luxury-stock-ai-v1",
-  "generated_at": "2026-10-12T17:09:56.243379+00:00",
+  "generated_at": "2026-10-14T18:32:05.763598+00:00",
   "source_hash": {
     "products.csv": "17b91b05c9ae616c",
     "calendar.csv": "1eeb64df602efdf1",

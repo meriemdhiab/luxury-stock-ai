@@ -1,64 +1,64 @@
 {
   "status": "success",
-  "generated_at": "2026-10-12T17:09:56.243379+00:00",
+  "generated_at": "2026-10-14T18:32:05.763598+00:00",
   "method": "importance globale du modèle et règle métier explicite de stock",
   "feature_importance": {
-    "lag_1": 0.629416,
-    "lag_4": 0.115832,
-    "lag_8": 0.066359,
-    "month": 0.044653,
-    "rolling_mean_4": 0.04134,
-    "week_index": 0.039766,
-    "product_num": 0.038196,
-    "luxury_peak_flag": 0.016332,
-    "quarter": 0.008106
+    "rolling_mean_4": 0.753236,
+    "month": 0.05071,
+    "lag_8": 0.040163,
+    "week_index": 0.037239,
+    "lag_1": 0.036331,
+    "product_num": 0.029664,
+    "lag_4": 0.029267,
+    "luxury_peak_flag": 0.017732,
+    "quarter": 0.005658
   },
   "business_rule": "replenishment = max(0, ceil(forecast_units * 2 - closing_stock_units))",
   "examples": [
     {
-      "forecast_week_start": "2026-06-08",
+      "forecast_week_start": "2026-04-27",
       "product_id": "P015",
-      "forecast_units": 24.06,
+      "forecast_units": 21.58,
       "closing_stock_units": 30.0,
-      "risk_of_stockout": false,
-      "recommended_replenishment_units": 19,
-      "explanation": "La recommandation compare la demande prévue à deux semaines de couverture cible et au stock disponible."
+      "risk_of_stockout": true,
+      "recommended_replenishment_units": 14,
+      "explanation": "La recommandation compare deux semaines de demande prévue (couverture cible) au dernier stock disponible."
     },
     {
-      "forecast_week_start": "2026-05-25",
+      "forecast_week_start": "2026-06-08",
       "product_id": "P015",
-      "forecast_units": 23.96,
+      "forecast_units": 21.06,
       "closing_stock_units": 30.0,
-      "risk_of_stockout": false,
-      "recommended_replenishment_units": 18,
-      "explanation": "La recommandation compare la demande prévue à deux semaines de couverture cible et au stock disponible."
+      "risk_of_stockout": true,
+      "recommended_replenishment_units": 13,
+      "explanation": "La recommandation compare deux semaines de demande prévue (couverture cible) au dernier stock disponible."
     },
     {
       "forecast_week_start": "2026-06-01",
       "product_id": "P015",
-      "forecast_units": 23.36,
+      "forecast_units": 21.19,
       "closing_stock_units": 30.0,
-      "risk_of_stockout": false,
-      "recommended_replenishment_units": 17,
-      "explanation": "La recommandation compare la demande prévue à deux semaines de couverture cible et au stock disponible."
+      "risk_of_stockout": true,
+      "recommended_replenishment_units": 13,
+      "explanation": "La recommandation compare deux semaines de demande prévue (couverture cible) au dernier stock disponible."
     },
     {
       "forecast_week_start": "2026-05-11",
       "product_id": "P015",
-      "forecast_units": 22.7,
+      "forecast_units": 21.4,
       "closing_stock_units": 30.0,
-      "risk_of_stockout": false,
-      "recommended_replenishment_units": 16,
-      "explanation": "La recommandation compare la demande prévue à deux semaines de couverture cible et au stock disponible."
+      "risk_of_stockout": true,
+      "recommended_replenishment_units": 13,
+      "explanation": "La recommandation compare deux semaines de demande prévue (couverture cible) au dernier stock disponible."
     },
     {
-      "forecast_week_start": "2026-05-18",
+      "forecast_week_start": "2026-04-06",
       "product_id": "P015",
-      "forecast_units": 22.81,
+      "forecast_units": 21.42,
       "closing_stock_units": 30.0,
-      "risk_of_stockout": false,
-      "recommended_replenishment_units": 16,
-      "explanation": "La recommandation compare la demande prévue à deux semaines de couverture cible et au stock disponible."
+      "risk_of_stockout": true,
+      "recommended_replenishment_units": 13,
+      "explanation": "La recommandation compare deux semaines de demande prévue (couverture cible) au dernier stock disponible."
     }
   ],
   "limits": [
