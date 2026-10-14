@@ -356,9 +356,3 @@ luxury-stock-ai/
 - les recommandations ne déclenchent aucune commande automatiquement ;
 - le monitoring temps réel et la haute disponibilité doivent être activés dans une infrastructure de production ;
 - les métriques ne doivent pas être généralisées à un contexte réel sans nouvelle validation.
-
-## Documentation complémentaire
-
-- [`pipeline.md`](pipeline.md) : fonctionnement détaillé du pipeline ;
-- [`docs/matrice_evaluation.md`](docs/matrice_evaluation.md) : correspondance entre critères et preuves ;
-- [`docs/audit_referentiel.md`](docs/audit_referentiel.md) : audit du référentiel ;
