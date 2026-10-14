@@ -31,7 +31,7 @@ Le dépôt couvre une chaîne de bout en bout : gouvernance des données, archit
 - comparaison d'une baseline avec un modèle Random Forest ;
 - évaluation temporelle avec MAE et RMSE ;
 - prévisions de demande sur 12 semaines ;
-- détection des couvertures de stock insuffisantes ;
+- détection des risques de rupture à partir du délai fournisseur et du stock minimal ;
 - recommandations de réapprovisionnement ;
 - dashboard Streamlit ;
 - tests unitaires, fonctionnels et de robustesse, dont la cohérence schéma SQL et dictionnaire de données ;
@@ -47,15 +47,18 @@ Le jeu de données est généré avec une seed fixe afin de rendre les résultat
 | ----------------------- | ------ |
 | Produits                | 36     |
 | Semaines disponibles    | 116    |
-| Semaines d'entraînement | 104    |
+| Semaines d'entraînement | 104 (dont 8 de préchauffage pour les retards) |
 | Semaines de test        | 12     |
 | Lignes de ventes        | 4 176  |
 | Lignes d'inventaire     | 4 176  |
-| MAE baseline            | 7.2964 |
-| MAE modèle candidat     | 3.8742 |
-| Amélioration de la MAE  | 46.9 % |
+| Lignes de test          | 432    |
+| MAE baseline            | 4.0498 |
+| RMSE baseline           | 5.1581 |
+| MAE modèle candidat     | 3.4985 |
+| RMSE modèle candidat    | 4.5476 |
+| Amélioration de la MAE  | 13.61 % |
 
-> Les résultats sont obtenus sur des données synthétiques, sur une seule fenêtre de test de 12 semaines, face à une baseline en moyenne glissante de quatre semaines. Ils ne constituent pas une garantie de performance sur des données réelles.
+> Évaluation à une semaine d'horizon (les retards utilisent les valeurs observées), sur une seule fenêtre de test de 12 semaines, face à une baseline en moyenne glissante de quatre semaines. Les prévisions futures sont calculées de façon récursive sur 12 semaines. Résultats obtenus sur des données synthétiques : ils ne constituent pas une garantie de performance sur des données réelles.
 
 ## Architecture
 
@@ -68,10 +71,10 @@ Validation et contrôles qualité
     v
 Nettoyage et quarantaine
     |
-    +-------------------------+
-    |                         |
-    v                         v
-SQLite / PostgreSQL       Rapports qualité
+    +-----------------------+-----------------------+
+    |                       |                       |
+    v                       v                       v
+data/processed (CSV)    SQLite (stockage)     Rapports qualité
     |
     v
 Variables temporelles et retardées
@@ -91,6 +94,8 @@ Dashboard Streamlit
     v
 Validation humaine (aucune commande automatique)
 ```
+
+Les étapes d'IA lisent `data/processed`. SQLite stocke les données nettoyées. PostgreSQL porte le schéma cible : il est créé et chargé depuis `data/raw` au démarrage de Docker Compose.
 
 Le schéma de lignage détaillé est dans [`01_governance/data_lineage.png`](01_governance/data_lineage.png). Les choix d'architecture sont détaillés dans [`02_architecture/architecture_decisions.md`](02_architecture/architecture_decisions.md).
 
@@ -229,9 +234,9 @@ La baseline correspond à une moyenne glissante sur les quatre dernières semain
 - les retards à une, quatre et huit semaines ;
 - la moyenne glissante sur quatre semaines.
 
-L'évaluation respecte l'ordre temporel : les 104 premières semaines servent à l'entraînement et les 12 dernières au test.
+L'évaluation respecte l'ordre temporel : les 104 premières semaines servent à l'entraînement (les 8 premières sont un préchauffage pour les retards, soit 96 semaines d'entraînement effectives) et les 12 dernières au test. Elle est à une semaine d'horizon : les retards du test utilisent les valeurs observées. Les prévisions futures sont récursives : chaque prévision alimente les retards de la semaine suivante.
 
-L'indicateur de risque est conservateur. Il est activé lorsque le stock disponible est inférieur à deux semaines de demande prévue. La recommandation de réapprovisionnement vise à atteindre cette couverture cible.
+Le risque de rupture est calculé par produit. Il est activé lorsque le stock actuel ne couvre pas la demande prévue pendant le délai fournisseur (`lead_time_days`), augmentée du stock minimal (`minimum_stock_units`). La recommandation de réapprovisionnement vise ce seuil plus deux semaines de demande prévue. Le seuil est exporté dans `forecast_future.csv` (colonne `reorder_point_units`).
 
 Les résultats sont écrits dans :
 
@@ -292,7 +297,7 @@ Pour déclencher le réentraînement si les seuils l'exigent :
 python scripts/retrain_if_needed.py
 ```
 
-Le seuil de réentraînement sur la MAE est fixé dans `config.yaml` (`monitoring.retrain_mae_increase_pct`) ; les autres seuils sont dans `reports/monitoring_reference.json`.
+Le seuil de réentraînement sur la MAE est fixé dans `03_pipeline/config/config.yaml` (`monitoring.retrain_mae_increase_pct`) ; les autres seuils sont dans `reports/monitoring_reference.json`.
 
 Les workflows GitHub Actions sont disponibles dans `.github/workflows/` :
 
@@ -314,20 +319,25 @@ luxury-stock-ai/
 ├── app/
 ├── data/
 ├── database/
-├── docs/
-├── presentations/
 ├── reports/
 ├── scripts/
 ├── tests/
+├── .dockerignore
 ├── .env.example
 ├── Dockerfile
-├── docker-compose.yml
 ├── Makefile
+├── README.md
+├── conftest.py
+├── docker-compose.yml
 ├── pipeline.md
-└── README.md
+├── pytest.ini
+├── requirements.txt
+└── run_pipeline.sh
 ```
 
 ## Livrables de certification
+
+Les présentations des quatre blocs et les vidéos de soutenance sont hébergées hors du dépôt (Google Drive).
 
 ### Bloc 1, gouvernance
 
@@ -371,7 +381,7 @@ luxury-stock-ai/
 - les données sont synthétiques ;
 - les promotions, événements externes et contraintes fournisseurs ne sont pas intégrés ;
 - la cible mesure des ventes et non la demande : les semaines en rupture la sous-estiment ;
-- l'évaluation repose sur une seule fenêtre de test de 12 semaines et une baseline en moyenne glissante, sans rétro-test sur plusieurs fenêtres ;
+- l'évaluation est à une semaine d'horizon (retards observés), sur une seule fenêtre de test de 12 semaines et face à une baseline en moyenne glissante, sans rétro-test sur plusieurs fenêtres ; les prévisions à 12 semaines ne sont pas évaluées de façon récursive ;
 - le dashboard est un outil d'aide à la décision ;
 - les recommandations ne déclenchent aucune commande automatiquement ;
 - le monitoring temps réel et la haute disponibilité doivent être activés dans une infrastructure de production ;
