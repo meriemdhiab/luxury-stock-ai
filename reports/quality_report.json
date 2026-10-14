@@ -1,7 +1,7 @@
 {
   "status": "success",
-  "generated_at": "2026-10-12T17:09:56.243379+00:00",
-  "files_checked": 26,
+  "generated_at": "2026-10-14T19:12:58.117412+00:00",
+  "files_checked": 37,
   "checks": [
     "schema validation",
     "business rules",
@@ -23,21 +23,15 @@
     "rejected_rows": 0,
     "clean_rows": 4176,
     "quarantine_rows": 0,
-    "run_timestamp_utc": "2026-10-12T17:08:30.305874+00:00",
-    "source_sales": "/files/conversation-2ydvYTow7m/luxury-stock-ai/data/raw/sales_weekly.csv",
-    "output_database": "/files/conversation-2ydvYTow7m/luxury-stock-ai/database/luxury_stock_pipeline.sqlite"
+    "run_timestamp_utc": "2026-10-14T19:12:52.157239+00:00",
+    "source_sales": "data/raw/sales_weekly.csv",
+    "output_database": "database/luxury_stock_pipeline.sqlite"
   },
   "unit_tests": {
     "passed": true,
-    "runner": "manual smoke execution in current Computer; pytest included in requirements and Docker image",
-    "summary": [
-      "feature construction passed",
-      "quality fixture detection passed",
-      "temporal split passed"
-    ]
+    "runner": "pytest -q",
+    "summary": "14 passed in 3.32s"
   },
   "errors": [],
-  "warnings": [
-    "pytest executable is not installed in the current Computer image; run pytest inside the project environment or Docker"
-  ]
+  "warnings": []
 }

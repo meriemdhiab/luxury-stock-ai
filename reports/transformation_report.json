@@ -1,9 +1,9 @@
 {
   "status": "success",
-  "generated_at": "2026-10-12T17:09:56.243379+00:00",
+  "generated_at": "2026-10-14T19:12:58.117412+00:00",
   "processed_files": {
-    "products_raw.csv": 36,
-    "calendar_raw.csv": 116,
+    "products.csv": 36,
+    "calendar.csv": 116,
     "sales_weekly.csv": 4176,
     "inventory_weekly.csv": 4176
   },

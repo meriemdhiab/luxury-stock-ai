@@ -1,30 +1,52 @@
 {
   "status": "indicative_gaps",
-  "generated_at": "2026-10-12T17:09:56.243379+00:00",
+  "generated_at": "2026-10-14T19:12:58.117412+00:00",
   "dataset_version": "luxury-stock-ai-v1",
   "method": "comparaison des erreurs du modèle par catégorie et collection",
   "protected_data_note": "Aucune donnée sensible ou attribut personnel n'est collecté. Les groupes analysés sont des segments produits, pas des groupes de personnes.",
   "quality_by_product_group": {
     "category": {
       "Ceinture": {
-        "rows": 105,
-        "mae": 3.781542,
-        "rmse": 4.532264
+        "rows": 108,
+        "mae": 3.284765,
+        "rmse": 3.964111
       },
       "Petite maroquinerie": {
-        "rows": 105,
-        "mae": 5.196997,
-        "rmse": 6.595705
+        "rows": 108,
+        "mae": 4.869641,
+        "rmse": 6.289833
       },
       "Portefeuille": {
-        "rows": 105,
-        "mae": 3.575151,
-        "rmse": 4.381662
+        "rows": 108,
+        "mae": 3.30598,
+        "rmse": 4.083306
       },
       "Sac à main": {
-        "rows": 105,
-        "mae": 2.942987,
-        "rmse": 3.769653
+        "rows": 108,
+        "mae": 2.533563,
+        "rmse": 3.281978
+      }
+    },
+    "collection": {
+      "Atelier": {
+        "rows": 108,
+        "mae": 3.30598,
+        "rmse": 4.083306
+      },
+      "Héritage": {
+        "rows": 108,
+        "mae": 3.284765,
+        "rmse": 3.964111
+      },
+      "Nocturne": {
+        "rows": 108,
+        "mae": 4.869641,
+        "rmse": 6.289833
+      },
+      "Éclat": {
+        "rows": 108,
+        "mae": 2.533563,
+        "rmse": 3.281978
       }
     }
   },

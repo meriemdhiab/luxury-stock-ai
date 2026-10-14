@@ -231,7 +231,7 @@ La baseline correspond à une moyenne glissante sur les quatre dernières semain
 
 L'évaluation respecte l'ordre temporel : les 104 premières semaines servent à l'entraînement et les 12 dernières au test.
 
-Le risque de rupture est calculé par produit. Il est activé lorsque le stock actuel ne couvre pas la demande prévue pendant le délai fournisseur (`lead_time_days`), augmentée du stock minimal (`minimum_stock_units`). La recommandation de réapprovisionnement vise ce seuil plus deux semaines de demande prévue. Le seuil est exporté dans `forecast_future.csv` (colonne `reorder_point_units`).
+L'indicateur de risque est conservateur. Il est activé lorsque le stock disponible est inférieur à deux semaines de demande prévue. La recommandation de réapprovisionnement vise à atteindre cette couverture cible.
 
 Les résultats sont écrits dans :
 

@@ -1,8 +1,8 @@
 {
   "status": "success",
-  "generated_at": "2026-10-12T17:09:56.243379+00:00",
+  "generated_at": "2026-10-14T19:12:58.117412+00:00",
   "model": "rolling_mean_4_baseline",
-  "mae": 7.2964,
-  "rmse": 9.9282,
+  "mae": 4.0498,
+  "rmse": 5.1581,
   "purpose": "référence avant modèle candidat"
 }
