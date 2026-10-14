@@ -362,5 +362,3 @@ luxury-stock-ai/
 - [`pipeline.md`](pipeline.md) : fonctionnement détaillé du pipeline ;
 - [`docs/matrice_evaluation.md`](docs/matrice_evaluation.md) : correspondance entre critères et preuves ;
 - [`docs/audit_referentiel.md`](docs/audit_referentiel.md) : audit du référentiel ;
-- [`docs/oral_questions.md`](docs/oral_questions.md) : questions probables du jury ;
-- [`presentations/`](presentations/) : supports de présentation par bloc.
