@@ -6,9 +6,14 @@ paths:
   quality_fixture: data/quality/sales_quality_issues.csv
   processed_dir: data/processed
   sqlite: database/luxury_stock_pipeline.sqlite
+  reports_dir: reports
 quality:
   required_sales_columns: [week_start, product_id, units_sold, returns_units, net_units_sold, revenue_eur, channel]
   required_inventory_columns: [week_start, product_id, opening_stock_units, inbound_units, units_sold, closing_stock_units, stockout_flag, days_of_cover]
+  # Politique documentée dans 01_governance/plan_gouvernance.md (section 4) :
+  # les lignes non conformes sont toujours exportées en quarantaine avec leur
+  # raison (data/processed/sales_quarantine.csv) ; si une règle ci-dessous est
+  # à true, la chaîne s arrête ensuite avec un code de retour non nul.
   fail_on_unknown_product: true
   fail_on_negative_units: true
 model:
@@ -16,3 +21,8 @@ model:
   test_weeks: 12
   forecast_horizon_weeks: 12
   random_state: 42
+monitoring:
+  # Seuil de réentraînement du plan de gouvernance (section 10) : la MAE de
+  # test dépasse de plus de 10 % la MAE de référence. Les autres seuils
+  # (dérive PSI, erreurs) restent dans reports/monitoring_reference.json.
+  retrain_mae_increase_pct: 10
