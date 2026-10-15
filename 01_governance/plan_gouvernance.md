@@ -1,7 +1,7 @@
 # Plan de gouvernance des données et de l'IA
 
 **Luxury Stock AI, dossier de certification Architecte en Intelligence Artificielle**
-Version 1.0, 14 octobre 2026
+Version 1.1, 15 octobre 2026
 
 <!-- TOC-START -->
 ## Table des matières
@@ -144,7 +144,7 @@ Les rapports JSON du dossier `reports/` constituent les preuves de contrôle : q
 
 Un réentraînement est recommandé si :
 
-- la MAE mesurée sur la fenêtre de test dépasse de plus de 10 % la MAE de référence (`monitoring.retrain_mae_increase_pct` dans `config.yaml`) ;
+- la MAE mesurée sur la fenêtre de test dépasse de plus de 10 % la MAE de référence (`monitoring.retrain_mae_increase_pct` dans `03_pipeline/config/config.yaml`) ;
 - l'erreur dépasse les seuils définis dans `reports/monitoring_reference.json` ;
 - la distribution des ventes dérive durablement (indice PSI de `drift_report.json`) ;
 - une règle qualité critique est violée ;
@@ -154,7 +154,8 @@ Un réentraînement est recommandé si :
 
 - Le jeu est synthétique et les facteurs externes (promotions, événements, contraintes fournisseurs) ne sont pas représentés.
 - La cible `net_units_sold` mesure des ventes, non la demande : pendant une rupture (`stockout_flag`), les ventes sous-estiment la demande.
-- L'évaluation repose sur une seule fenêtre de test de 12 semaines et sur une baseline en moyenne glissante de quatre semaines ; elle ne remplace pas un rétro-test sur plusieurs fenêtres.
+- L'évaluation est à une semaine d'horizon : les retards de la période de test utilisent les valeurs observées, alors que les prévisions futures sont calculées de façon récursive sur 12 semaines.
+- Elle repose sur une seule fenêtre de test de 12 semaines et sur une baseline en moyenne glissante de quatre semaines ; elle ne remplace pas un rétro-test sur plusieurs fenêtres.
 - Le modèle ne remplace pas un système de planification industriel. La solution est conçue comme un MVP démontrable, reproductible et extensible.
 
 ### Références à consulter
@@ -173,4 +174,5 @@ Ces références servent à justifier les principes retenus. Elles ne constituen
 | Version | Date | Modifications |
 |---|---|---|
 | 0.1 | Version initiale | Premier plan de gouvernance. |
+| 1.1 | 2026-10-15 | Évaluation décrite comme une évaluation à une semaine d'horizon, chemin de configuration du seuil de réentraînement corrigé. |
 | 1.0 | 2026-10-14 | Ordre des sections aligné sur la table des matières, lignage intégré avec texte alternatif, politique d'anomalies, rôles de base de données, nouveaux risques, seuil de réentraînement reformulé, limites complétées. |
