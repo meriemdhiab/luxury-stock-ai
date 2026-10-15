@@ -11,6 +11,7 @@ from pathlib import Path
 
 import numpy as np
 import pandas as pd
+import yaml
 from sklearn.metrics import mean_absolute_error, mean_squared_error
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -20,6 +21,7 @@ sys.path.insert(0, str(ROOT / "04_ai/src"))
 from features import FEATURE_COLUMNS, MODEL_PATH
 
 NOW = datetime.now(timezone.utc).isoformat()
+CONFIG_PATH = ROOT / "03_pipeline/config/config.yaml"
 
 def dump(name: str, payload: dict):
     (REPORTS / name).write_text(json.dumps(payload, ensure_ascii=False, indent=2), encoding="utf-8")
@@ -37,6 +39,29 @@ def safe_float(x):
     if x is None or (isinstance(x, float) and np.isnan(x)):
         return None
     return round(float(x), 6)
+
+
+def load_monitoring_reference(metrics: dict, mae_increase_pct: float) -> tuple[dict, bool]:
+    """Référence figée au premier passage : les exécutions suivantes s'y comparent.
+
+    Supprimer reports/monitoring_reference.json pour adopter le modèle courant comme nouvelle référence.
+    """
+    path = REPORTS / "monitoring_reference.json"
+    if path.exists():
+        reference = json.loads(path.read_text(encoding="utf-8"))
+        created = False
+    else:
+        reference = {"dataset_version": "luxury-stock-ai-v1", "generated_at": NOW, "metrics": metrics["candidate"]}
+        created = True
+    reference["thresholds"] = {
+        "max_mae": 10.0,
+        "max_rmse": 15.0,
+        "max_quality_rejected_rate": 0.01,
+        "max_mae_increase_percent": mae_increase_pct,
+        "source_mae_increase_percent": "03_pipeline/config/config.yaml (monitoring.retrain_mae_increase_pct)",
+    }
+    dump("monitoring_reference.json", reference)
+    return reference, created
 
 
 def count_project_files(patterns: tuple[str, ...]) -> int:
@@ -235,14 +260,18 @@ def main():
         "limits": ["local benchmark on synthetic data", "not a production load test"],
     })
 
-    reference = {"dataset_version": "luxury-stock-ai-v1", "generated_at": NOW, "metrics": metrics["candidate"], "thresholds": {"max_mae": 10.0, "max_rmse": 15.0, "max_quality_rejected_rate": 0.01, "max_metric_drop_percent": 10.0}}
-    dump("monitoring_reference.json", reference)
+    config = yaml.safe_load(CONFIG_PATH.read_text(encoding="utf-8"))
+    mae_increase_limit = float(config["monitoring"]["retrain_mae_increase_pct"])
+    reference, reference_created = load_monitoring_reference(metrics, mae_increase_limit)
+    reference_mae = reference["metrics"]["mae"]
+    mae_increase = (metrics["candidate"]["mae"] - reference_mae) / reference_mae * 100 if reference_mae else 0.0
     quality_rate = quality["quarantine_rows"] / max(quality["input_rows"], 1)
     checks = [
         {"check": "candidate_mae_under_threshold", "status": "ok" if metrics["candidate"]["mae"] <= 10 else "alert", "detail": f"valeur {metrics['candidate']['mae']} (seuil 10.0)"},
         {"check": "candidate_rmse_under_threshold", "status": "ok" if metrics["candidate"]["rmse"] <= 15 else "alert", "detail": f"valeur {metrics['candidate']['rmse']} (seuil 15.0)"},
         {"check": "quality_rejected_rate", "status": "ok" if quality_rate <= 0.01 else "warning", "detail": f"valeur {quality_rate:.4f} (seuil 0.01)"},
         {"check": "candidate_beats_baseline_mae", "status": "ok" if metrics["candidate"]["mae"] < metrics["baseline"]["mae"] else "warning", "detail": f"candidate {metrics['candidate']['mae']} contre baseline {metrics['baseline']['mae']}"},
+        {"check": "candidate_mae_vs_reference", "status": "ok" if mae_increase <= mae_increase_limit else "warning", "detail": f"hausse de {mae_increase:.2f} % par rapport à la MAE de référence {reference_mae} (seuil {mae_increase_limit} %)"},
         {"check": "forecast_non_negative", "status": "ok" if (future["forecast_units"] >= 0).all() else "alert", "detail": "toutes les prévisions sont positives ou nulles"},
     ]
     dump("monitoring_report.json", {
@@ -250,9 +279,9 @@ def main():
         "recommended_action": "Aucune action immédiate" if all(c["status"] == "ok" for c in checks) else "Analyser les contrôles en warning",
         "generated_at": NOW,
         "dataset_version": "luxury-stock-ai-v1",
-        "reference_created_this_run": True,
+        "reference_created_this_run": reference_created,
         "checks": checks,
-        "retraining_policy": ["baisse de plus de 10 points d'une métrique", "hausse durable de l'erreur", "dérive de distribution des ventes", "violation d'une règle qualité critique", "ajout de nouvelles données ou de nouveaux produits"],
+        "retraining_policy": [f"hausse de la MAE de plus de {mae_increase_limit:g} % par rapport à la référence", "hausse durable de l'erreur", "dérive de distribution des ventes", "violation d'une règle qualité critique", "ajout de nouvelles données ou de nouveaux produits"],
         "summary": {"ok": sum(c["status"] == "ok" for c in checks), "warning": sum(c["status"] == "warning" for c in checks), "alert": sum(c["status"] == "alert" for c in checks)},
     })
 

@@ -261,7 +261,7 @@ Le dossier `reports/` rassemble les preuves techniques du projet :
 | `explainability_report.json`         | Importance des variables et logique métier.          |
 | `chain_report.json`                  | Traçabilité de bout en bout.                         |
 | `engine_scalability_report.json`     | Benchmark local et stratégie de passage à l'échelle. |
-| `monitoring_reference.json`          | Seuils de supervision.                               |
+| `monitoring_reference.json`          | MAE de référence figée et seuils de supervision.     |
 | `monitoring_report.json`             | État des contrôles et politique de réentraînement.   |
 | `drift_report.json`                  | Dérive indicative mesurée par PSI.                   |
 
@@ -297,7 +297,7 @@ Pour déclencher le réentraînement si les seuils l'exigent :
 python scripts/retrain_if_needed.py
 ```
 
-Le seuil de réentraînement sur la MAE est fixé dans `03_pipeline/config/config.yaml` (`monitoring.retrain_mae_increase_pct`) ; les autres seuils sont dans `reports/monitoring_reference.json`.
+Le seuil de réentraînement sur la MAE est fixé dans `03_pipeline/config/config.yaml` (`monitoring.retrain_mae_increase_pct`) ; les autres seuils sont dans `reports/monitoring_reference.json`. La MAE de référence est figée dans ce fichier lors de sa création : chaque exécution de `generate_reports.py` compare la MAE courante à cette référence, et une hausse supérieure au seuil passe le monitoring en `warning`, ce qui déclenche `retrain_if_needed.py`. Pour adopter le modèle courant comme nouvelle référence, supprimer `reports/monitoring_reference.json` puis relancer `generate_reports.py`.
 
 Les workflows GitHub Actions sont disponibles dans `.github/workflows/` :
 
